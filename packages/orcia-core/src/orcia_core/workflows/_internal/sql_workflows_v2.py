@@ -70,7 +70,7 @@ class SqlWorkflowDefinitionsV2Store:
                 CAST(:spec_jsonb AS JSONB),
                 NOW()
             )
-            ON CONFLICT (workflow_id, version) DO UPDATE SET
+            ON CONFLICT (workflow_id, version) WHERE pack_bundle_id IS NULL DO UPDATE SET
                 slug = EXCLUDED.slug,
                 status = EXCLUDED.status,
                 pack_id = EXCLUDED.pack_id,
@@ -113,7 +113,7 @@ class SqlWorkflowDefinitionsV2Store:
                 """
                 SELECT spec_jsonb
                 FROM workflow_definitions_v2
-                ORDER BY updated_at ASC
+                ORDER BY (pack_bundle_id IS NULL) ASC, updated_at ASC
                 """
             )
             try:

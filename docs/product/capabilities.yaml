@@ -431,28 +431,28 @@ capabilities:
     title: Studio workflows et registre des packs
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-5, 29-6
+    origin_ref: 8-5, 29-6, 31-2, 31-4, 31-5, 31-6, 31-7
     status: live
     kind: feature
     uj: [UJ-19]
-    db_tables: [workflow_definitions, declarative_pack_bundles]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
+    db_tables: [workflow_definitions, declarative_pack_bundles, pack_dna_mechanisms, pack_draft_memberships, workspace_pack_activations, workspace_pack_slot_bindings]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts, tests/security/test_story_31_7_packs_red_team_security.py, tests/security/test_story_31_7_packs_isolation_and_guards.py, tests/unit/packs/test_story_31_7_scope_and_pack_queries_cov.py, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/packs/test_story_31_2_pack_import_service.py, tests/unit/packs/test_story_31_2_packs_router.py, tests/unit/packs/test_story_31_4_workspace_packs_router.py, tests/unit/packs/test_story_31_4_slot_guard_and_errors.py, tests/unit/packs/test_story_31_4_p0_guards.py, tests/unit/packs/test_story_31_5_composer_routers.py, tests/unit/packs/test_story_31_5_composer_sql_crud.py, tests/unit/packs/test_story_31_5_closure_analyzer_and_helpers.py, tests/unit/packs/test_story_31_5_export_renderer.py, tests/unit/packs/test_story_31_5_export_scrubber.py, tests/unit/packs/test_story_31_5_publish_export_tx.py, tests/integration/test_story_31_2_pack_import_and_day0_postgres18_s3.py, tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py, tests/integration/test_story_31_4_hardening_guards_postgres18.py, tests/integration/test_story_31_5_pack_composer_and_export_postgres18.py, tests/integration/test_story_31_5_rbac_and_roundtrip_postgres18.py, packages/api-client/src/__tests__/packsDomainClient.test.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, packages/ui/src/__tests__/story-31-6-pack-ui-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, apps/web/src/__tests__/story-31-6-pack-registry-and-slots.test.tsx, apps/web/src/__tests__/story-31-6-composer-unlink-and-autocomplete.test.tsx]
     verification: runtime
-    verified_at: "2026-11-25"
-    surfaces: { route: /settings, api: studio_and_wizards.py, ui: SettingsPacksSection }
+    verified_at: "2026-11-26"
+    surfaces: { route: /settings, api: "studio_and_wizards.py, packs.py, _packs_scope_guards.py, workspace_packs.py, pack_composer.py, _pack_composer_publish_routes.py, _packs_export_legacy_route.py, _catalog_delete_routes.py, _workflows_delete_routes.py", ui: "SettingsPacksSection + DeclarativePacksRegistrySection + WorkspacePacksPanel + PackImportModal + PackSlotBindingDrawer + PackComposerModal + EntityUnlinkConfirmDialog" }
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
     fr: [FR-31]
     origin: adhoc
-    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston + 29-6
+    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston + 29-6 + 31-2 + 31-4 + 31-5 + 31-6 + 31-7
     status: live
     kind: feature
     uj: [UJ-19]
-    db_tables: [declarative_pack_bundles, catalog_items, platform_settings]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    db_tables: [declarative_pack_bundles, catalog_items, platform_settings, pack_draft_memberships, workspace_pack_activations, workspace_pack_slot_bindings]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts, tests/security/test_story_31_7_packs_red_team_security.py, tests/security/test_story_31_7_packs_isolation_and_guards.py, tests/unit/packs/test_story_31_7_scope_and_pack_queries_cov.py, packages/api-client/src/__tests__/packsDomainClient.test.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, packages/ui/src/__tests__/story-31-6-pack-ui-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, apps/web/src/__tests__/story-31-6-pack-registry-and-slots.test.tsx, apps/web/src/__tests__/story-31-6-composer-unlink-and-autocomplete.test.tsx, tests/unit/packs/test_story_31_4_workspace_packs_router.py, tests/unit/packs/test_story_31_4_p0_guards.py, tests/unit/packs/test_story_31_5_composer_routers.py, tests/unit/packs/test_story_31_5_anti_hostage_guards.py, tests/unit/packs/test_story_31_5_delete_rbac_and_legacy_export.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/test_story_31_2_pack_import_and_day0_postgres18_s3.py, tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py, tests/integration/test_story_31_4_hardening_guards_postgres18.py, tests/integration/test_story_31_5_pack_composer_and_export_postgres18.py, tests/integration/test_story_31_5_rbac_and_roundtrip_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-25"
-    surfaces: { route: /settings }
+    verified_at: "2026-11-26"
+    surfaces: { route: "/settings, /settings/packs, /spaces", api: "packs.py, _packs_scope_guards.py, _pack_readiness_preflight.py, workspace_packs.py, pack_composer.py, _pack_composer_publish_routes.py, _packs_export_legacy_route.py", ui: "DeclarativePacksRegistrySection + WorkspacePacksPanel + WorkspacePacksTabSection + PackImportModal + PackSlotBindingDrawer + PackComposerModal" }
   - id: CAP-057
     title: Wizards d'initialisation durables
     fr: [FR-31]
@@ -620,15 +620,15 @@ capabilities:
     title: Gouvernance de personnalisation 3 niveaux (Mode A)
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3 + 29-5 + 30-1 + 30-2 + 30-6
+    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3 + 29-5 + 30-1 + 30-2 + 30-6 + 31-3 + 31-6 + 31-7
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [workspace_customization_overrides, user_preferences]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/unit/test_story_30_1_assistant_settings_empty_instructions.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-1-assistant-settings-explicit-save.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/security/test_story_31_7_packs_red_team_security.py, tests/security/test_story_31_7_packs_isolation_and_guards.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/unit/test_story_30_1_assistant_settings_empty_instructions.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_3_ontology_and_autocomplete.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/integration/test_story_31_3_qualified_namespacing_and_ontology_postgres18.py, tests/security/test_story_26_10_assistant_security_redteam.py, packages/ui/src/__tests__/story-31-6-pack-ui-primitives.test.tsx, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-1-assistant-settings-explicit-save.test.tsx, apps/web/src/__tests__/story-31-3-autocomplete-collision.test.ts, apps/web/src/__tests__/story-31-6-composer-unlink-and-autocomplete.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts]
     verification: runtime
     verified_at: "2026-11-26"
-    surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, _assistant_governance_async_views.py, _assistant_governance_sync.py, assistant_governance_models.py, assistant_prompt_preview.py, assistant_prompt_builder.py, assistant_prompt_locales.py, _assistant_conversational_prompt.py, _assistant_conversational_locales.py, _assistant_profile_locales.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
+    surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, _assistant_governance_async_views.py, _assistant_governance_sync.py, assistant_governance_models.py, assistant_prompt_preview.py, assistant_prompt_builder.py, assistant_prompt_locales.py, _assistant_conversational_prompt.py, _assistant_conversational_locales.py, _assistant_profile_locales.py, sql_assistant_governance.py", ui: "AssistantGovernanceModalAndStudio + AssistantPromptPlusAndAutocomplete + AssistantStickyFooterBadges" }
   - id: CAP-071
     title: Moteur unifié des tours assistant (AssistantTurnEngine N1-N6), 3 vitesses, SSE v2 canonique, synthesize-now, execution_profile ASSISTANT et MCP assistant.ask
     fr: [FR-33]
@@ -713,15 +713,15 @@ capabilities:
     title: Services MCP, agents distants A2A et banc de test
     fr: [FR-35]
     origin: epic
-    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5 + 30-5 + 30-6
+    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5 + 30-5 + 30-6 + 31-3 + 31-4 + 31-5 + 31-6 + 31-7
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
-    db_tables: [catalog_items, enterprise_connectors, audit_ledger]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
+    db_tables: [catalog_items, enterprise_connectors, audit_ledger, workspace_pack_slot_bindings]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts, tests/security/test_story_31_7_packs_red_team_security.py, tests/security/test_story_31_7_packs_isolation_and_guards.py, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-31-6-pack-registry-and-slots.test.tsx, packages/ui/src/__tests__/story-31-6-pack-ui-primitives.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_3_namespacing_and_flat_ontology.py, tests/unit/packs/test_story_31_4_slot_guard_and_errors.py, tests/unit/packs/test_story_31_4_workspace_packs_router.py, tests/unit/packs/test_story_31_5_export_scrubber.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/integration/test_story_31_3_qualified_namespacing_and_ontology_postgres18.py, tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py, tests/integration/test_story_31_5_pack_composer_and_export_postgres18.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
     verification: runtime
     verified_at: "2026-11-26"
-    surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py + _agents_lifecycle_guards.py", ui: RemoteServiceTestBenchAndMcpExposureView }
+    surfaces: { api: "mcp_and_test_bench.py + _mcp_assistant_ask_bridge.py + _pack_readiness_preflight.py + codegraph_mcp.py + _agents_lifecycle_guards.py + workspace_packs.py + _pack_export_scrubber.py", ui: "RemoteServiceTestBenchAndMcpExposureView + PackSlotBindingDrawer" }
   - id: CAP-083
     title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
     fr: [FR-35]
@@ -741,25 +741,25 @@ capabilities:
     title: Gestion, création et exécution des agents et compétences (skills)
     fr: [FR-24, FR-36]
     origin: adhoc
-    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills + 29-5 + 29-7 + 30-5 + 30-6
+    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills + 29-5 + 29-7 + 30-5 + 30-6 + 31-3 + 31-5 + 31-6 + 31-7
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
-    db_tables: [catalog_items, catalog_acl_entries]
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/e2e/29-epic-29-canonical-headers-bilingual.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-5-agent-lifecycle-and-errors.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/src/__tests__/page-header-structure-and-visual-grammar-audit.test.tsx, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/agents-and-skills-studio-and-governance.test.tsx, packages/ui/src/__tests__/story-30-5-agent-modal-save-and-status.test.tsx, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/security/test_story_30_6_prompt_leak_and_draft_redteam.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py]
+    db_tables: [catalog_items, catalog_acl_entries, pack_draft_memberships]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/e2e/29-epic-29-canonical-headers-bilingual.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts, tests/security/test_story_31_7_packs_red_team_security.py, tests/security/test_story_31_7_packs_isolation_and_guards.py, tests/unit/packs/test_story_31_7_scope_and_pack_queries_cov.py, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-5-agent-lifecycle-and-errors.test.tsx, apps/web/src/__tests__/story-31-3-autocomplete-collision.test.ts, apps/web/src/__tests__/story-31-6-composer-unlink-and-autocomplete.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/src/__tests__/page-header-structure-and-visual-grammar-audit.test.tsx, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/agents-and-skills-studio-and-governance.test.tsx, packages/ui/src/__tests__/story-30-5-agent-modal-save-and-status.test.tsx, packages/ui/src/__tests__/story-31-6-pack-ui-primitives.test.tsx, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_3_namespacing_and_flat_ontology.py, tests/unit/packs/test_story_31_3_flat_loaders_and_parser_edges.py, tests/unit/packs/test_story_31_5_anti_hostage_guards.py, tests/unit/packs/test_story_31_5_delete_routers_and_guards.py, tests/security/test_story_30_6_prompt_leak_and_draft_redteam.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/integration/test_story_31_3_qualified_namespacing_and_ontology_postgres18.py, tests/integration/test_story_31_5_pack_composer_and_export_postgres18.py]
     verification: runtime
     verified_at: "2026-11-26"
-    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py, _agents_and_skills_skills_routes.py, _agents_lifecycle_guards.py)", ui: AgentsAndSkillsManagerView }
+    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py, _agents_and_skills_helpers.py, _agents_and_skills_skills_routes.py, _agents_lifecycle_guards.py, _packs_scope_guards.py, _catalog_delete_routes.py, _entity_delete_rbac.py)", ui: "AgentsAndSkillsManagerView + AgentStudioCardItem + AgentStudioCardBadgesAndPassport + SkillStudioCardItem + EntityUnlinkConfirmDialog" }
   - id: CAP-091
     title: Refonte complète écran Agents, Skills et MCP & Studio de Gouvernance en 6 Blocs (A..F) + Checklist 6/6 Mon Assistant
     fr: [FR-36]
     origin: adhoc
-    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp + 2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes + 29-5 + 30-5 + 30-6
+    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp + 2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes + 29-5 + 30-5 + 30-6 + 31-7
     status: live
     kind: feature
     uj: [UJ-19]
     db_tables: [catalog_items, catalog_acl_entries, org_units]
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/story-30-5-agent-modal-save-and-status.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-5-agent-lifecycle-and-errors.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, tests/unit/test_agents_and_skills_router_and_service.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts, tests/security/test_story_31_7_packs_red_team_security.py, tests/security/test_story_31_7_packs_isolation_and_guards.py, tests/unit/packs/test_story_31_7_scope_and_pack_queries_cov.py, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/story-30-5-agent-modal-save-and-status.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-5-agent-lifecycle-and-errors.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, tests/unit/test_agents_and_skills_router_and_service.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py]
     verification: runtime
     verified_at: "2026-11-26"
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + AgentsAndSkillsHeaderAndToolbar + AgentSixBlocksEditorBody + AgentSixBlocksKnowledgeToolsGuardrailsSections + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal + WorkspaceAssistantPinnedCard" }
@@ -769,11 +769,11 @@ capabilities:
     title: Garde-fous qualité UI/CI (zéro bouton muet, popups RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation design system, socle Radix UI AD-22)
     fr: []
     origin: adhoc
-    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4 + 29-6 + 29-7 + 30-1 + 30-5 + 30-6"
+    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4 + 29-6 + 29-7 + 30-1 + 30-5 + 30-6 + 31-3 + 31-6 + 31-7"
     status: live
     kind: foundation
     e2e_exempt_reason: "Garde-fous transverses d'hygiène UI/CI (zéro bouton muet, modales RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation @orcia/ui, socle Radix UI AD-22, verrous déterministes i18n FR/EN, grammaire visuelle Cobalt 3 niveaux & en-tête canonique) sans parcours métier isolé ; couverts par AD-17 Couches 1a/1b (audit AST/Vitest & Radix UI), contrôles CI statiques et spec E2E bilingue 23-bilingual-fr-en-i18n-and-rfc9457.spec.ts."
-    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx, packages/ui/src/__tests__/orcia-page-header-tab-strip-card.test.tsx, apps/web/src/__tests__/story-29-4-canonical-header-and-visual-grammar.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, apps/web/src/__tests__/story-30-1-assistant-settings-explicit-save.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, apps/web/src/__tests__/page-header-structure-and-visual-grammar-audit.test.tsx, apps/web/src/__tests__/i18n-hardcoded-locale-ast-audit.test.ts, apps/web/src/__tests__/i18n-dictionary-parity-and-jargon-audit.test.ts, apps/web/src/__tests__/client-error-code-contract-audit.test.ts, tests/unit/test_i18n_backend_catalog_and_english_dev_audit.py, apps/web/e2e/23-bilingual-fr-en-i18n-and-rfc9457.spec.ts, apps/web/e2e/29-epic-29-canonical-headers-bilingual.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts]
+    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx, packages/ui/src/__tests__/orcia-page-header-tab-strip-card.test.tsx, packages/ui/src/__tests__/story-31-6-pack-ui-primitives.test.tsx, apps/web/src/__tests__/story-29-4-canonical-header-and-visual-grammar.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, apps/web/src/__tests__/story-30-1-assistant-settings-explicit-save.test.tsx, apps/web/src/__tests__/story-31-6-pack-registry-and-slots.test.tsx, apps/web/src/__tests__/story-31-6-composer-unlink-and-autocomplete.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/security/test_story_31_7_packs_red_team_security.py, tests/security/test_story_31_7_packs_isolation_and_guards.py, tests/unit/packs/test_story_31_7_scope_and_pack_queries_cov.py, apps/web/src/__tests__/page-header-structure-and-visual-grammar-audit.test.tsx, apps/web/src/__tests__/i18n-hardcoded-locale-ast-audit.test.ts, apps/web/src/__tests__/i18n-dictionary-parity-and-jargon-audit.test.ts, apps/web/src/__tests__/client-error-code-contract-audit.test.ts, tests/unit/test_i18n_backend_catalog_and_english_dev_audit.py, apps/web/e2e/23-bilingual-fr-en-i18n-and-rfc9457.spec.ts, apps/web/e2e/29-epic-29-canonical-headers-bilingual.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts]
     surfaces:
       api: e2e_test_hooks
       ui: "OrciaPageHeader + OrciaTabStrip + OrciaDataCard"
@@ -884,15 +884,15 @@ capabilities:
     title: ORCIA Process Studio v2 — Chaîne de Valeur Interactive (Macro-VSM 11 étapes), Studio 5 Blocs Control-M, Sas Externe Délégué & Arbitrage HITL 4 Actions sur Diff S3 Claim-Check
     fr: [FR-7, FR-8, FR-9, FR-15, FR-17, FR-29, FR-30, FR-35, FR-36]
     origin: epic
-    origin_ref: epic-14 (14-1..14-5) + 29-5 + 30-3 + 30-4 + 30-6
+    origin_ref: epic-14 (14-1..14-5) + 29-5 + 30-3 + 30-4 + 30-6 + 31-4 + 31-5 + 31-6 + 31-7
     status: live
     kind: feature
     uj: [UJ-10, UJ-19]
-    db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs, workflow_v2_runs]
-    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py, tests/unit/test_story_30_4_workflows_helpers_coverage.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-3-processes-pg18-pending-runs.test.tsx, apps/web/src/__tests__/story-30-4-processes-tabbed-hub-and-focus-review.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/e2e/12-epic16-reflexive-trace-and-line-inspector.spec.ts, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts]
+    db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, pack_draft_memberships, claim_check_artifacts, workflow_runs, workflow_v2_runs, run_lock_manifests, workspace_pack_activations, workspace_pack_slot_bindings]
+    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py, tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py, tests/integration/test_story_31_4_hardening_guards_postgres18.py, tests/integration/test_story_31_5_pack_composer_and_export_postgres18.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py, tests/unit/test_story_30_4_workflows_helpers_coverage.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_4_p0_guards.py, tests/unit/packs/test_story_31_4_api_helpers_cov.py, tests/unit/packs/test_story_31_5_delete_routers_and_guards.py, tests/security/test_story_31_7_packs_red_team_security.py, tests/security/test_story_31_7_packs_isolation_and_guards.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-3-processes-pg18-pending-runs.test.tsx, apps/web/src/__tests__/story-30-4-processes-tabbed-hub-and-focus-review.test.tsx, apps/web/src/__tests__/story-31-6-composer-unlink-and-autocomplete.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/e2e/12-epic16-reflexive-trace-and-line-inspector.spec.ts, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts]
     verification: runtime
     verified_at: "2026-11-26"
-    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId + /processes/runs/$runId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/runs (workflows.py, _workflows_pending_runs.py)", ui: "ProcessesHubPage + ProcessCatalogCardGrid + ProcessesActiveDossiersCard + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer + ProcessRunFocusReviewPage + ProcessRunActionBanner + ProcessRunArtifactPane + ProcessRunReasoningRail", migration: "20261108_0910_declarative_packs_and_workflows_v2.py + 20261125_303_workflow_v2_runs.py" }
+    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId + /processes/runs/$runId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/runs + /api/v1/workspaces/{workspace_id}/packs (workflows.py, _workflows_pending_runs.py, _workflows_pack_lock_helpers.py, _workflows_run_state_helpers.py, _workflows_delete_routes.py, workspace_packs.py)", ui: "ProcessesHubPage + ProcessCatalogCardGrid + ProcessesActiveDossiersCard + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer + ProcessRunFocusReviewPage + ProcessRunActionBanner + ProcessRunArtifactPane + ProcessRunReasoningRail + EntityUnlinkConfirmDialog", migration: "20261108_0910_declarative_packs_and_workflows_v2.py + 20261125_303_workflow_v2_runs.py + 20261126_311_declarative_packs_v2.py" }
   - id: CAP-150
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
     fr: [FR-11, FR-13, FR-14, FR-34, FR-35]
@@ -910,18 +910,18 @@ capabilities:
     title: Orchestration réflexive (Mon Assistant, Mes Agents & Processus pilotés par l'objectif), exploration chirurgicale #Lstart-end et dualité Objectif vs Jalons
     fr: [FR-1, FR-14, FR-20, FR-22, FR-24, FR-33, FR-36]
     origin: epic
-    origin_ref: epic-16 (16-1..16-4) + 30-3 + 30-4 + 30-6
+    origin_ref: epic-16 (16-1..16-4) + 30-3 + 30-4 + 30-6 + 31-4 + 31-7
     status: live
     kind: feature
     uj: [UJ-10, UJ-17]
-    db_tables: [reflexive_execution_sessions, workflow_definitions_v2, workflow_runs, workflow_v2_runs]
+    db_tables: [reflexive_execution_sessions, workflow_definitions_v2, workflow_runs, workflow_v2_runs, run_lock_manifests, workspace_pack_activations, workspace_pack_slot_bindings]
     verification: runtime
     verified_at: "2026-11-26"
     surfaces:
       route: "/assistant + /agents + /processes + /processes/studio/$workflowId + /processes/runs/$runId"
-      api: "/api/v1/sources/inspect-lines + /api/v1/sources/surgical-explore (sources_surgical.py) + /api/v1/executions/reflexive + /api/v1/executions/{execution_id}/trace-stream (executions_trace.py) + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/workflows/v2/{workflow_id}/runs (workflows.py, _workflows_pending_runs.py, _process_llm_bridge.py)"
+      api: "/api/v1/sources/inspect-lines + /api/v1/sources/surgical-explore (sources_surgical.py) + /api/v1/executions/reflexive + /api/v1/executions/{execution_id}/trace-stream (executions_trace.py) + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/workflows/v2/{workflow_id}/runs + /api/v1/workspaces/{workspace_id}/packs + /api/v1/runs/{run_id}/lock (workflows.py, _workflows_pending_runs.py, _workflows_pack_lock_helpers.py, _process_llm_bridge.py, workspace_packs.py, orchestration.py)"
       ui: "WorkflowOrchestrationModeSelector + WorkflowBlock2ExecutionSection + AgentExecutionTrace + agentExecutionTraceGrouping + SourceLineInspectorDrawer + AgentTestBenchSection + InteractiveRunDrawer + ProcessRunFocusReviewPage + ProcessRunActionBanner + ProcessRunArtifactPane + ProcessRunReasoningRail + AssistantSpeedSelectorAndStreamView"
-      migration: "20261111_01_reflexive_execution_sessions.py + 20261122_267_story_26_7_reflexive_execution_profile.py + 20261125_303_workflow_v2_runs.py"
+      migration: "20261111_01_reflexive_execution_sessions.py + 20261122_267_story_26_7_reflexive_execution_profile.py + 20261125_303_workflow_v2_runs.py + 20261126_311_declarative_packs_v2.py"
     tests:
       - tests/unit/connectors/test_surgical_context_explorer.py
       - tests/unit/core/test_non_deterministic_reflexive_runtime.py
@@ -930,10 +930,14 @@ capabilities:
       - tests/unit/connectors/test_bounded_workflow_v2_encapsulation.py
       - tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py
       - tests/unit/test_story_30_4_workflows_helpers_coverage.py
+      - tests/unit/packs/test_story_31_4_p0_guards.py
+      - tests/unit/packs/test_story_31_4_api_helpers_cov.py
       - tests/integration/api/test_story_16_1_sources_surgical_api.py
       - tests/integration/api/test_story_16_2_reflexive_runtime_and_sse_postgres18.py
       - tests/integration/api/test_story_16_3_dual_mode_processes_api.py
       - tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py
+      - tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py
+      - tests/integration/test_story_31_4_hardening_guards_postgres18.py
       - packages/ui/src/__tests__/story-16-4-agent-execution-trace-and-inspector.test.tsx
       - packages/ui/src/__tests__/story-30-3-coalesced-thought-trace.test.tsx
       - apps/web/src/__tests__/story-16-3-dual-mode-processes-studio.test.tsx
@@ -944,6 +948,9 @@ capabilities:
       - apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts
       - apps/web/e2e/12-epic16-reflexive-trace-and-line-inspector.spec.ts
       - apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts
+      - apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts
+      - tests/security/test_story_31_7_packs_red_team_security.py
+      - tests/security/test_story_31_7_packs_isolation_and_guards.py
 
   # ───────────── Epic 18 : Sources d'Espace Multi-Nature, Moteur de Fraîcheur & Code Graph MCP ─────────────
   - id: CAP-180
@@ -1032,7 +1039,7 @@ capabilities:
     title: Provenance auditable immuable (audit_ledger append-only), comptabilité FinOps consolidée, impact cognitif et télémétrie multi-métriques MCP
     fr: [FR-25, FR-26, FR-27]
     origin: epic
-    origin_ref: epic-6 (6-1..6-4) + 29-1 + 29-5
+    origin_ref: epic-6 (6-1..6-4) + 29-1 + 29-5 + 31-3 + 31-5 + 31-6 + 31-7
     status: live
     kind: feature
     uj: [UJ-8]
@@ -1041,7 +1048,7 @@ capabilities:
     verified_at: "2026-11-26"
     surfaces:
       route: /finops
-      api: "finops.py, finops_remote.py, audit_ledger.py, finops_cognitive.py"
+      api: "finops.py, finops_remote.py, audit_ledger.py, finops_cognitive.py, pack_draft_guard.py"
       ui: "FinopsGovernanceDashboardView + FinopsKpiStrip + FinopsProcessAndTiersTab + FinopsBudgetPolicyModal + FinopsBudgetOverrideModal + FinopsRemoteMcpServicesTab + FinopsConnectorQuotaModal + ActivityLogExplorerView + ActivityProvenanceModal + FinopsHumanMasteryTab + CognitiveMetricCard"
       migration: "20261116_0601, 20261116_0602, 20261116_0604, 20261117_0605"
     tests:
@@ -1049,6 +1056,9 @@ capabilities:
       - tests/unit/test_story_6_1_sql_audit_ledger.py
       - tests/unit/test_story_6_1_outbox_subscriber.py
       - tests/security/test_story_6_1_canary_leak_and_scope_guard.py
+      - tests/unit/packs/test_story_31_5_anti_hostage_guards.py
+      - tests/integration/test_story_31_5_pack_composer_and_export_postgres18.py
+      - apps/web/src/__tests__/story-31-6-composer-unlink-and-autocomplete.test.tsx
       - tests/integration/api/test_story_6_1_audit_ledger_postgres18.py
       - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
       - tests/unit/test_story_6_2_finops_accounting_decimal.py
@@ -1073,6 +1083,9 @@ capabilities:
       - apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx
       - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
       - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
+      - apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts
+      - tests/security/test_story_31_7_packs_red_team_security.py
+      - tests/security/test_story_31_7_packs_isolation_and_guards.py
     notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives), Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes), Story 29.1 (2026-11-25 : auto-sélection RBAC du périmètre FinOps, masquage des pilules non autorisées, mappage BU -> Équipe/Division, suppression état vide sur erreur et guidage bilingue ERR_SCOPE_ACCESS_DENIED), et Story 29.5 (2026-11-25 : convergence en-tête canonique OrciaPageHeader, pilules périmètre distinctes, onglets OrciaTabStrip et tableaux encadrés OrciaDataCard)."
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs événementiels idempotents et supervision post-hoc
@@ -1167,13 +1180,13 @@ capabilities:
     title: Governed Assistant Tool Router, dynamic workspace catalog (surgical, RAG, ontology, PG18 skills, MCP), Lock V5 / Human-Anchor arbitration outbox, idempotency, sandboxing, and anti-injection delimiters
     fr: [FR-4, FR-13, FR-21, FR-22, FR-33]
     origin: epic
-    origin_ref: 26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit + 26-7 + 26-8 + 26-9 + 26-10
+    origin_ref: 26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit + 26-7 + 26-8 + 26-9 + 26-10 + 31-7
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [catalog_items, audit_ledger, domain_events_outbox, workspace_llm_tier_mappings, reflexive_execution_sessions, workflow_runs, step_executions, blackboard_snapshots]
     verification: runtime
-    verified_at: "2026-11-22"
+    verified_at: "2026-11-26"
     tests:
       - tests/unit/test_story_26_6b_governed_tool_router_and_catalog.py
       - tests/unit/test_story_26_6b_execution_profile_and_loop.py
@@ -1183,12 +1196,15 @@ capabilities:
       - tests/evals/test_assistant_tool_output_injection.py
       - tests/evals/test_story_26_10_assistant_golden_evals.py
       - tests/security/test_story_26_10_assistant_security_redteam.py
+      - tests/security/test_story_31_7_packs_red_team_security.py
+      - tests/security/test_story_31_7_packs_isolation_and_guards.py
       - tests/integration/api/test_story_26_6b_tool_router_audit_outbox_postgres18.py
       - tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py
       - tests/integration/api/test_story_26_8_continue_in_process_dbos_postgres18.py
       - tests/integration/api/test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py
       - apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts
       - apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts
+      - apps/web/e2e/31-epic-31-declarative-apm-packs-roundtrip.spec.ts
     surfaces:
       api: "assistant_tool_executor_port.py, governed_tool_router.py, _assistant_tool_catalog.py, _assistant_tool_guards.py, _assistant_tool_sanitization.py, _assistant_tool_execution.py, _assistant_tool_audit.py, _assistant_tool_idempotency.py, _assistant_profile_guard.py, reflexive_runtime.py, governed_mcp_exposure.py, remote_test_bench_and_mcp_exposure.py, _mcp_assistant_ask_bridge.py, dependencies/assistant_tools.py, dependencies/_assistant_tools_helpers.py, dependencies/reflexive_execution.py, dependencies/workspace_and_packs.py, _assistant_turn_producer.py, _assistant_turn_producer_tool_loop.py, _assistant_tool_loop_rounds.py, _assistant_llm_tools_and_budget.py, assistant_turns.py, assistant_process_launcher.py, _assistant_process_wiring.py, _assistant_turn_controls_routes.py, assistant_workspace_folders.py, blackboard_and_engine.py"
       migration: "20261122_267_story_26_7_reflexive_execution_profile.py"

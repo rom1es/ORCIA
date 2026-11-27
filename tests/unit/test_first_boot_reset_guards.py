@@ -52,6 +52,13 @@ async def test_09_reset_rejects_orphan_alembic_tables_and_disabled_triggers() ->
 
     guards_mod = _load_module("_first_boot_reset_guards", GUARDS_PATH)
     assert guards_mod.quote_sql_ident("dbos", "workflow_status") == '"dbos"."workflow_status"'
+    assert any(scheme[1] == "pack" for scheme in guards_mod.BASE_CONNECTOR_SCHEMES)
+    assert {
+        "workspace_pack_slot_bindings",
+        "workspace_pack_activations",
+        "pack_draft_memberships",
+        "pack_dna_mechanisms",
+    } <= set(guards_mod.ORDERED_MUTABLE_TABLES_TO_CLEAR)
     with pytest.raises(ValueError, match="Identifiant SQL invalide"):
         guards_mod.quote_sql_ident("bad;schema", "users")
 

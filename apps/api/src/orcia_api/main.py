@@ -21,6 +21,7 @@ from orcia_api.openapi_security import (
 from orcia_api.routers._auth_pg_helpers import (
     rehydrate_bearer_subject_from_pg_if_missing,
 )
+from orcia_api.routers._catalog_delete_routes import router as catalog_delete_router
 from orcia_api.routers.agents_and_skills import router as agents_and_skills_router
 from orcia_api.routers.ai_models_hub import router as ai_models_hub_router
 from orcia_api.routers.assistant_turns import router as assistant_turns_router
@@ -65,6 +66,7 @@ from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_ro
 from orcia_api.routers.pack_builder import (
     router as pack_builder_router,
 )
+from orcia_api.routers.pack_composer import router as pack_composer_router
 from orcia_api.routers.packs import router as packs_router
 from orcia_api.routers.permission_broker import router as permission_broker_router
 from orcia_api.routers.portal_and_help import router as portal_and_help_router
@@ -81,6 +83,12 @@ from orcia_api.routers.workspace_datasources import (
 )
 from orcia_api.routers.workspace_governance import (
     router as workspace_governance_router,
+)
+from orcia_api.routers.workspace_packs import (
+    router as workspace_packs_router,
+)
+from orcia_api.routers.workspace_packs import (
+    run_lock_router as run_lock_manifest_router,
 )
 from orcia_core import __version__
 from orcia_core.config import load_orcia_env
@@ -181,6 +189,7 @@ def create_app() -> FastAPI:
     application.include_router(auth_router)
     application.include_router(org_and_workspaces_router)
     application.include_router(catalog_router)
+    application.include_router(catalog_delete_router)
     application.include_router(permission_broker_router)
     application.include_router(gates_router)
     application.include_router(human_gates_router)
@@ -211,8 +220,11 @@ def create_app() -> FastAPI:
     application.include_router(mcp_and_test_bench_router)
     application.include_router(pack_builder_router)
     application.include_router(agents_and_skills_router)
+    application.include_router(pack_composer_router)
     application.include_router(packs_router)
+    application.include_router(workspace_packs_router)
     application.include_router(workflows_v2_router)
+    application.include_router(run_lock_manifest_router)
     application.include_router(audit_ledger_router)
     application.include_router(finops_router)
     application.include_router(autonomy_contracts_router)

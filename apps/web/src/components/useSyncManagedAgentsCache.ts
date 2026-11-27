@@ -14,6 +14,7 @@ import {
 export function useSyncManagedAgentsCache(
   locale: SupportedWebLocale,
   defaultSkillOutputFormat: string,
+  workspaceId?: string,
 ): readonly [number, ReturnType<typeof readCachedAgentsAndSkills>["agents"]] {
   const [syncTick, setSyncTick] = useState<number>(0);
   const [agents, setAgents] = useState(() => readCachedAgentsAndSkills().agents);
@@ -21,7 +22,7 @@ export function useSyncManagedAgentsCache(
   useEffect(() => {
     let cancelled = false;
     createOrciaApiClient({ baseUrl: "", locale })
-      .listAgentsAndSkills()
+      .listAgentsAndSkills(undefined, workspaceId || undefined)
       .then((res) => {
         if (cancelled) return;
         const mappedSkills = (res.skills ?? []).map((s) =>
@@ -40,7 +41,7 @@ export function useSyncManagedAgentsCache(
     return () => {
       cancelled = true;
     };
-  }, [locale, defaultSkillOutputFormat]);
+  }, [locale, defaultSkillOutputFormat, workspaceId]);
 
   return [syncTick, agents] as const;
 }

@@ -73,6 +73,7 @@ async def test_declarative_packs_and_durable_wizards_persist_in_postgres18(
     monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
 
     from orcia_api.main import create_app
+    from orcia_core.packs import seed_system_packs_on_engine
 
     engine = create_async_engine(pg_url)
     try:
@@ -82,14 +83,19 @@ async def test_declarative_packs_and_durable_wizards_persist_in_postgres18(
             app1.router.lifespan_context(app1),
             AsyncClient(transport=ASGITransport(app=app1), base_url="http://test") as client1,
         ):
-            # 1a. Lifespan synced declarative_pack_bundles into PG18
+            # 1a. Lifespan Day-0 bootstrap seeded declarative_pack_bundles (`sdlc` & `orcia-docs`)
             async with engine.connect() as conn:
                 boot_pack_count = (
                     await conn.execute(sa.text("SELECT COUNT(*) FROM declarative_pack_bundles"))
                 ).scalar_one()
-            assert boot_pack_count >= 1
+            assert boot_pack_count >= 2
 
-            # 1b. Simulate Day-0 reset (DELETE rows without restarting API) -> GET + POST resyncs
+            r_boot_packs = await client1.get("/api/v1/packs")
+            assert r_boot_packs.status_code == 200, r_boot_packs.text
+            boot_slugs = {p["slug"] for p in r_boot_packs.json()["packs"]}
+            assert {"sdlc", "orcia-docs"}.issubset(boot_slugs)
+
+            # 1b. Story 31.2 PG18-only contract: DELETE -> GET returns 0 (zero runtime disk rescan)
             async with engine.begin() as conn:
                 await conn.execute(sa.text("DELETE FROM declarative_pack_bundles"))
                 empty_count = (
@@ -97,33 +103,45 @@ async def test_declarative_packs_and_durable_wizards_persist_in_postgres18(
                 ).scalar_one()
             assert empty_count == 0
 
+            r_empty = await client1.get("/api/v1/packs")
+            assert r_empty.status_code == 200, r_empty.text
+            assert r_empty.json()["packs"] == []
+
+            karim = app1.state.auth_service.resolve_user(persona_key="karim")
+            ktok = app1.state.auth_service.jwt_manager.issue_token_pair(
+                user_id=karim.id,
+                email=karim.email,
+                role=karim.platform_role,
+                org_unit_id=karim.primary_org_unit_id,
+                archetype=karim.human_profile_archetype,
+                auth_mode="LOCAL",
+            ).access_token
+            k_hdr = {"Authorization": f"Bearer {ktok}"}
+            r_missing_export = await client1.post(
+                "/api/v1/packs/export/ws-pg18-test",
+                params={"pack_id": "orcia-pack-sdlc"},
+                headers=k_hdr,
+            )
+            assert r_missing_export.status_code == 404
+
+            # Re-seed via Day-0 seeder -> PG18 packs restored & export returns valid APM .zip
+            await seed_system_packs_on_engine(engine)
+
             r_packs = await client1.get("/api/v1/packs")
             assert r_packs.status_code == 200, r_packs.text
-            packs_payload = r_packs.json()["packs"]
-            assert len(packs_payload) >= 2
-            slugs = {p["slug"] for p in packs_payload}
-            assert "sdlc" in slugs
-            assert "orcia-docs" in slugs
-
-            async with engine.connect() as conn:
-                resync_count = (
-                    await conn.execute(sa.text("SELECT COUNT(*) FROM declarative_pack_bundles"))
-                ).scalar_one()
-            assert resync_count >= 2
-
-            # Clear again and test POST /api/v1/packs/export/{workspace_id} resync + valid ZIP
-            async with engine.begin() as conn:
-                await conn.execute(sa.text("DELETE FROM declarative_pack_bundles"))
+            slugs = {p["slug"] for p in r_packs.json()["packs"]}
+            assert {"sdlc", "orcia-docs"}.issubset(slugs)
 
             r_export = await client1.post(
                 "/api/v1/packs/export/ws-pg18-test",
                 params={"pack_id": "orcia-pack-sdlc"},
+                headers=k_hdr,
             )
             assert r_export.status_code == 200, r_export.text
             assert r_export.headers["content-type"].startswith("application/zip")
             assert "sdlc-ws-pg18-test.zip" in r_export.headers["content-disposition"]
             with zipfile.ZipFile(io.BytesIO(r_export.content), "r") as zf:
-                assert "sdlc/pack.yaml" in zf.namelist()
+                assert any(n.endswith(("apm.yml", "pack.yaml")) for n in zf.namelist())
 
             async with engine.connect() as conn:
                 export_pack_rows = (

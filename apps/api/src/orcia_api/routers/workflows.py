@@ -23,6 +23,7 @@ from orcia_api.dependencies import (
     get_workflows_v2_sql_store,
 )
 from orcia_api.routers._agents_lifecycle_guards import enforce_active_agents_for_workflow
+from orcia_api.routers._workflows_delete_routes import delete_router as _wf_delete_router
 from orcia_api.routers._workflows_helpers import (
     enforce_not_observer as _enforce_not_observer,
 )
@@ -76,6 +77,7 @@ router = APIRouter(
     tags=["Process Studio v2 & VSM (Epic 14)"],
     responses=PROBLEM_RESPONSES,
 )
+router.include_router(_wf_delete_router)
 
 WorkflowSqlStoreDep = Annotated[SqlWorkflowDefinitionsV2Store, Depends(get_workflows_v2_sql_store)]
 WorkflowRunsSqlStoreDep = Annotated[

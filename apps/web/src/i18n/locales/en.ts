@@ -21,6 +21,7 @@ import { GATES_AND_INBOX_EN_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_EN_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_EN_LABELS } from "./inbox_and_cockpit_labels";
 import { ONTOLOGY_GLOSSARY_EN } from "./ontology_glossary_labels";
+import { PACKS_UI_EN_LABELS } from "./packs_ui_labels_en";
 import { PROCESS_CATALOG_VSM_P1_EN } from "./process_catalog_vsm_p1_en";
 import { PROCESS_CATALOG_VSM_P2_EN } from "./process_catalog_vsm_p2_en";
 import { PROCESS_CATALOG_VSM_P3_EN } from "./process_catalog_vsm_p3_en";
@@ -68,6 +69,7 @@ export const enDictionary: TranslationDictionary = {
   featureInboxAssistant: FEATURE_INBOX_ASSISTANT_EN,
   featureWorkspaces: FEATURE_WORKSPACES_EN,
   featureAdminCatalogSettings: FEATURE_ADMIN_CATALOG_SETTINGS_EN,
+  packsUi: PACKS_UI_EN_LABELS,
   contextualHelp: CONTEXTUAL_HELP_EN,
   shellNotifications: SHELL_NOTIFICATIONS_EN,
   shellBreadcrumbsAndScope: SHELL_BREADCRUMBS_AND_SCOPE_EN,

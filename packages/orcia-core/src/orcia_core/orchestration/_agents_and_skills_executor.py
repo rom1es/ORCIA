@@ -261,6 +261,14 @@ def normalize_agent_upsert_lists(
     )
 
 
+def require_non_empty_field(value: str, detail_code: str, instance: str | None) -> str:
+    """Trim required string field or raise `ValidationDomainError`."""
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValidationDomainError(detail_code=detail_code, instance=instance)
+    return cleaned
+
+
 __all__ = [
     "delete_skill_from_registries",
     "duplicate_agent_into_registry",

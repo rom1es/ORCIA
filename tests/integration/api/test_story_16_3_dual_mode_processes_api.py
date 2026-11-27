@@ -20,16 +20,12 @@ Validates full vertical `HTTP -> FastAPI -> ProcessExecutionDispatcher -> Postgr
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import os
 import shutil
-import sys
-import tempfile
 import time
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
 
 import httpx
 import pytest
@@ -39,28 +35,21 @@ from alembic.config import Config
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
+from tests.integration.api._story_30_3_fixtures import (
+    load_reset_script as _load_reset_script,
+)
+from tests.integration.api._story_30_3_fixtures import (
+    prepare_sock_dir as _prepare_sock_dir,
+)
+from tests.integration.api._story_30_3_fixtures import (
+    seed_workspace_for_16_3,
+)
 
 from orcia_api.main import create_app
 
 os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-
-
-def _prepare_sock_dir(prefix: str) -> Path:
-    target = Path(tempfile.mkdtemp(prefix=f"orcia_16_3_{prefix}_"))
-    target.chmod(0o777)
-    return target
-
-
-def _load_reset_script() -> Any:
-    script_path = REPO_ROOT / "infra" / "scripts" / "maintenance" / "09_reset_db_first_boot.py"
-    spec = importlib.util.spec_from_file_location("reset_db_first_boot_16_3", script_path)
-    assert spec is not None and spec.loader is not None
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = mod
-    spec.loader.exec_module(mod)
-    return mod
 
 
 @pytest.fixture(scope="module")
@@ -138,10 +127,13 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
 
         # 1. App #1: List dual-mode workflows, edit & persist in PG18, and run both modes
         app_one = create_app()
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app_one),
-            base_url="http://testserver",
-        ) as client1:
+        async with (
+            app_one.router.lifespan_context(app_one),
+            httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app_one),
+                base_url="http://testserver",
+            ) as client1,
+        ):
             list_resp = await client1.get("/api/v1/workflows/v2")
             assert list_resp.status_code == 200, list_resp.text
             workflows = {w["id"]: w for w in list_resp.json()["items"]}
@@ -157,6 +149,7 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
 
             # Observer Claire blocked with 403 ERR_OBSERVER_MODE_READ_ONLY on PUT and POST /runs
             wf01_candidate = dict(workflows["wf-01-qualification-prd"])
+            assert wf01_candidate is not None
             obs_put = await client1.put(
                 "/api/v1/workflows/v2/wf-01-qualification-prd",
                 params={"persona_key": "claire"},
@@ -166,7 +159,6 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
             assert obs_put.headers["content-type"].startswith("application/problem+json")
             assert obs_put.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
             assert obs_put.json()["trace_id"]
-
             obs_run = await client1.post(
                 "/api/v1/workflows/v2/wf-generate-orcia-documentation/runs",
                 params={"persona_key": "claire"},
@@ -174,8 +166,6 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
             )
             assert obs_run.status_code == 403
             assert obs_run.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
-
-            # Switch wf-01-qualification-prd to non_deterministic and save via PUT
             wf01_candidate["orchestration_type"] = "non_deterministic"
             wf01_candidate["reflexive_objective"] = (
                 "Qualifier le besoin produit de maniere adaptative et proposer un PRD complet."
@@ -196,10 +186,11 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
             assert saved_body["workflow"]["orchestration_type"] == "non_deterministic"
 
             # Execute Goal-driven process (`wf-generate-orcia-documentation`)
+            ws_16_3 = await seed_workspace_for_16_3(engine)
             goal_run_resp = await client1.post(
                 "/api/v1/workflows/v2/wf-generate-orcia-documentation/runs",
-                params={"persona_key": "marc"},
-                json={"inputs": {"help_key": "studio.five-blocks"}},
+                params={"persona_key": "karim"},
+                json={"inputs": {"help_key": "studio.five-blocks"}, "workspace_id": ws_16_3},
             )
             assert goal_run_resp.status_code == 200, goal_run_resp.text
             goal_run = goal_run_resp.json()["run"]
@@ -212,8 +203,9 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
             # Execute Milestone-driven process (`wf-03-etude-architecture`)
             ms_run_resp = await client1.post(
                 "/api/v1/workflows/v2/wf-03-etude-architecture/runs",
-                params={"persona_key": "marc"},
+                params={"persona_key": "karim"},
                 json={
+                    "workspace_id": ws_16_3,
                     "inputs": {"prd_valide_uri": "catalog://docs/prd-mon-compte"},
                     "auto_approve_checkpoints": True,
                 },
@@ -236,7 +228,7 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
                         """
                         SELECT status, spec_jsonb
                         FROM workflow_definitions_v2
-                        WHERE workflow_id = 'wf-01-qualification-prd'
+                        WHERE workflow_id = 'wf-01-qualification-prd' AND status = 'draft'
                         """
                     )
                 )
@@ -267,10 +259,13 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
 
         # 3. F5 Reload Survival across a BRAND-NEW FastAPI app instance (`0` RAM state)
         app_two = create_app()
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app_two),
-            base_url="http://testserver",
-        ) as client2:
+        async with (
+            app_two.router.lifespan_context(app_two),
+            httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app_two),
+                base_url="http://testserver",
+            ) as client2,
+        ):
             f5_get = await client2.get("/api/v1/workflows/v2/wf-01-qualification-prd")
             assert f5_get.status_code == 200, f5_get.text
             f5_wf = f5_get.json()
@@ -280,16 +275,26 @@ async def test_dual_mode_workflows_v2_pg18_persistence_dispatcher_runs_and_obser
             assert f5_wf["allowed_delegate_agents"] == [
                 "orchestrateur-produit",
                 "redacteur-documentation-orcia",
-            ]
+            ]  # noqa: E501
 
-        # 4. Day-0 Reset (`09_reset_db_first_boot.py --apply`) clears workflow_definitions_v2
+        # 4. Day-0 Reset (`09_reset_db_first_boot.py --apply`) clears draft edits & restores Day-0
         reset_mod = _load_reset_script()
         assert "workflow_definitions_v2" in reset_mod.ORDERED_MUTABLE_TABLES_TO_CLEAR
         await reset_mod.reset_database_to_first_boot(engine, apply_changes=True)
         async with engine.connect() as conn:
-            remaining = (
-                await conn.execute(sa.text("SELECT COUNT(*) FROM workflow_definitions_v2"))
+            drafts_remaining = (
+                await conn.execute(
+                    sa.text("SELECT COUNT(*) FROM workflow_definitions_v2 WHERE status = 'draft'")
+                )
             ).scalar_one()
-            assert remaining == 0
+            assert drafts_remaining == 0
+            day0_published = (
+                await conn.execute(
+                    sa.text(
+                        "SELECT COUNT(*) FROM workflow_definitions_v2 WHERE status = 'published'"
+                    )
+                )
+            ).scalar_one()
+            assert day0_published >= 5
     finally:
         await engine.dispose()

@@ -55,6 +55,7 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "ontology_and_rag",
     "ontology_promotions",
     "orchestration",
+    "packs",
     "permission_broker",
     "problem_details",
     "process_studio_v2",

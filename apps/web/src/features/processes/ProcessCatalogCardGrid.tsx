@@ -17,9 +17,11 @@ export interface ProcessCatalogCardGridProps {
   readonly modesCopy: ProcessOrchestrationModesCopy;
   readonly isFr: boolean;
   readonly launchingWorkflowId?: string | null;
+  readonly readOnlyObserver?: boolean;
   readonly onChangeFilter: (nextFilter: WorkflowHubFilter) => void;
   readonly onExecuteWorkflow: (workflowId: string) => void;
   readonly onOpenStudio: (workflowId: string) => void;
+  readonly onDeleteWorkflow?: (workflowId: string) => void;
 }
 
 export function ProcessCatalogCardGrid({
@@ -28,12 +30,16 @@ export function ProcessCatalogCardGrid({
   modesCopy,
   isFr,
   launchingWorkflowId = null,
+  readOnlyObserver = false,
   onChangeFilter,
   onExecuteWorkflow,
   onOpenStudio,
+  onDeleteWorkflow,
 }: ProcessCatalogCardGridProps) {
   const locale = resolveLocaleForFlag(isFr);
-  const copy = resolveDictionaryForFlag(isFr).processStudioUi.hub;
+  const dict = resolveDictionaryForFlag(isFr);
+  const copy = dict.processStudioUi.hub;
+  const deleteWorkflowLabel = dict.packsUi.actions.deleteWorkflowConfirmLabel;
 
   const filteredWorkflows = workflows.filter((wf) => {
     if (filter === "published") return wf.status === "published";
@@ -215,14 +221,27 @@ export function ProcessCatalogCardGrid({
                   </span>
                 </button>
 
-                <button
-                  type="button"
-                  data-testid={`open-studio-btn-${wf.id}`}
-                  onClick={() => onOpenStudio(wf.id)}
-                  className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
-                >
-                  {copy.customizeInStudioBtn}
-                </button>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    data-testid={`open-studio-btn-${wf.id}`}
+                    onClick={() => onOpenStudio(wf.id)}
+                    className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+                  >
+                    {copy.customizeInStudioBtn}
+                  </button>
+                  {onDeleteWorkflow && wf.pack_id === "orcia-pack-custom" ? (
+                    <button
+                      type="button"
+                      data-testid={`delete-workflow-btn-${wf.id}`}
+                      disabled={readOnlyObserver}
+                      onClick={() => onDeleteWorkflow(wf.id)}
+                      className="orcia-ds-btn orcia-ds-btn-danger orcia-ds-btn-sm"
+                    >
+                      {deleteWorkflowLabel}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </article>
           );

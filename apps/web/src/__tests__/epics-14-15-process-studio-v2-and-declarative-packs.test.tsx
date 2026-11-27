@@ -91,7 +91,7 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     );
 
     expect(screen.getByTestId("processes-hub-v2-page")).toBeDefined();
-    expect(screen.getByTestId("bounded-workflow-card-wf-01-qualification-prd")).toBeDefined();
+    expect(await screen.findByTestId("bounded-workflow-card-wf-01-qualification-prd")).toBeDefined();
     expect(screen.getByTestId("bounded-workflow-card-wf-08-dev-external-gate")).toBeDefined();
 
     // Verify legacy forms / pack builders are NOT stacked below Mes Processus

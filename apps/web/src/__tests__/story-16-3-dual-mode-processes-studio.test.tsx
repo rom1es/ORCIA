@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { createOrciaApiClient } from "@orcia/api-client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -35,6 +36,7 @@ describe("Story 16.3 — Dual-Mode Processes Hub & Studio (Goal-Driven vs Milest
 
   it("renders ProcessesHubPage (/processes) in FR and EN with Goal-driven & Milestone-driven badges and zero technical jargon", async () => {
     for (const locale of ["fr", "en"] as const) {
+      await createOrciaApiClient({ baseUrl: "" }).updateUserPreferences({ locale });
       const queryClient = createOrciaQueryClient();
       const history = createMemoryHistory({ initialEntries: ["/processes"] });
       const router = createOrciaRouter({ queryClient, history });
@@ -49,7 +51,7 @@ describe("Story 16.3 — Dual-Mode Processes Hub & Studio (Goal-Driven vs Milest
       );
 
       expect(screen.getByTestId("processes-hub-v2-page")).toBeDefined();
-      const goalBadge = screen.getByTestId(
+      const goalBadge = await screen.findByTestId(
         "workflow-card-mode-badge-wf-generate-orcia-documentation",
       );
       const milestoneBadge = screen.getByTestId(

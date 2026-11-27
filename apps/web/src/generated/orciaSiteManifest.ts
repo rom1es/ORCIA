@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 29,
     "uiPrimitivesCount": 134,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 63,
+    "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 247,
+    "techLeadReportsCount": 254,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -264,7 +264,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261122_265_story_26_5_assistant_thread_messages",
     "20261122_266a_story_26_6a_llm_supports_tools",
     "20261122_267_story_26_7_reflexive_execution_profile",
-    "20261125_303_workflow_v2_runs"
+    "20261125_303_workflow_v2_runs",
+    "20261126_311_declarative_packs_v2"
   ],
   "architectureDecisions": [
     {
@@ -547,6 +548,55 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.7",
+      "reportFile": "31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure-tech-lead-report.md",
+      "domain": "Epic 31 Lot 6 & Closure — Red-Team Security, Post-Validate P0-1/P1-1..P1-3 Remediation, Bilingual Day-0 Round-Trip Playwright E2E, Zone 4 Help & Architecture ERD Sync, capabilities.yaml & Epic 31 Closure (CAP-055, CAP-056, CAP-070, CAP-082, CAP-090, CAP-091, CAP-100, CAP-140, CAP-160, CAP-200, CAP-260)",
+      "summary": "Closed (done, epic-31: done, ACTION_ITEM-31.1..31.2: open, independent Testing Verifier verified): authored fail-closed Red-Team & RBAC suites (test_story_31_7_packs_red_team_security.py 161 L, test_story_31_7_packs_isolation_and_guards.py 295 L, _packs_red_team_fixtures.py 202 L) and bilingual fr/en Day-0 Desktop Playwright round-trip E2E (31-epic-31-declarative-apm-packs-roundtrip.spec.ts 238 L, epic31PackHelpers.ts 74 L), remediated P0-1 (_packs_scope_guards.py 189 L, packs.py 285 L, _packs_router_helpers.py 277 L, _pack_composer_helpers.py 225 L), P1-1 (_sql_agents_pack_queries.py 299 L, sql_agents_and_skills.py 297 L, _agents_namespacing.py 235 L, agents_and_skills.py 298 L, _agents_and_skills_helpers.py 287 L), P1-2 (_pack_readiness_preflight.py 88 L wired on assistant_turns.py & _mcp_assistant_ask_bridge.py), and P1-3 (test_story_3_2f mkdtemp, test_story_16_3 & test_story_30_3 lifespan + sql_workflow_v2_runs.py, _sql_workflow_v2_pending_query.py, 03_backfill_permission_broker.py), plus test_story_31_7_scope_and_pack_queries_cov.py (289 L), UI rerender/hydration fixes (PackComposerModal.tsx 293 L, PackSlotBindingDrawer.tsx 285 L, story-31-6-pack-ui-primitives.test.tsx 297 L, _pack_export_scrubber_mappers.py 266 L), Zone 4 help, architecture.md ERD (761 L), and capabilities.yaml; all source/test files <= 300 L; verified 97% scoped branch coverage (448 stmts/174 branches, 159 passed), 199 passed tests/evals+security+contract, 17 passed (14 + 3) PG18+Redis+S3 testcontainers, 9/9 Turbo (23+159+375 = 557 JS/TS tests), 8 passed (1.8m) Desktop Playwright E2E (31, 18, 09, env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,925 files)/mypy --strict (950 files)/lint-imports (5/5, 907 files, 6,581 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, site:sync/site:check (254 reports, 66/66 CAPs), check_implementation_docs.py (254/254), post-sync tests/unit (1,295 passed), and gitnexus analyze (51,715 nodes / 259,114 edges / 862 clusters / 1,534 flows)."
+    },
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.6",
+      "reportFile": "31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui-tech-lead-report.md",
+      "domain": "Epic 31 Lot 5 — Direction C Bilingual (fr/en) Pack Registry, Workspace Pack Activation & Slot Binding Drawer, CUSTOM Pack Composer Modal, Anti-Hostage Unlink Dialog & @pack/agent Autocomplete Badges (CAP-055, CAP-056, CAP-070, CAP-082, CAP-090, CAP-100, CAP-140, CAP-200)",
+      "summary": "Closed (done, independent Testing Verifier verified): added typed packs/composer/multipart client (packs.ts 286 L, multipartHelper.ts 131 L, packTypes.ts 16 L, unlinkFromDraftPacks delete options), @orcia/ui Direction C primitives (WorkspacePacksPanel.tsx 193 L, PackImportModal.tsx 209 L, PackSlotBindingDrawer.tsx 279 L, PackComposerModal.tsx 273 L + PackComposerMetadataStep.tsx 175 L + PackComposerMembersStep.tsx 182 L, EntityUnlinkConfirmDialog.tsx 90 L, pack attribution badges on AssistantPromptPlusAndAutocomplete.tsx 278 L / AgentStudioCardItem.tsx 236 L / SkillStudioCardItem.tsx 205 L), unified /settings/packs + /settings?tab=packs + /spaces (DeclarativePacksRegistrySection.tsx 286 L, WorkspacePacksTabSection.tsx 70 L, useWorkspacePacksController.ts 212 L, usePackComposerAndImportController.ts 248 L), 409 unlink guard across Agents/Skills/Workflows/VSM (useGuardedEntityDelete.ts 90 L), and 100% FR/EN parity (packs_ui_labels_{fr,en}.ts 146 L); all new/edited production .ts/.tsx files <= 300 L; verified 9/9 Turbo (@orcia/api-client 4/23 + @orcia/ui 41/157 + @orcia/web 98/375 = 555 JS/TS tests, all i18n/audit gates 0), 11 passed, 0 failed (2.1m) Desktop Playwright E2E (02, 07, 08, 09, 18 with env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,916 files)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, site:sync/site:check (253 reports, 66/66 capabilities), and gitnexus analyze (51,479 nodes / 235,430 edges / 881 clusters / 1,524 flows)."
+    },
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.5",
+      "reportFile": "31-5-pack-composer-anti-hostage-unlink-closure-gate-and-scrubbed-zip-export-tech-lead-report.md",
+      "domain": "Epic 31 Lot 4 — Pack Composer (CUSTOM Drafts), Anti-Hostage Unlink Guard (409 + ?unlink_from_draft_packs=true), Closure Gate (422), Scrubbed .zip + apm.lock.yaml Export & OpenAPI SDK (CAP-055, CAP-056, CAP-082, CAP-090, CAP-140, CAP-200)",
+      "summary": "Closed (done, bmad-architect-worker APPROVED, independent Testing Verifier verified): implemented PackComposerService (253 L), 8-table typed FK SQL draft composer (_sql_pack_composer*.py), shared anti-hostage guard (pack_draft_guard.py 243 L, entity_delete_tx.py 278 L, _sql_agents_delete.py 242 L, audit_ledger PACK_DRAFT_MEMBER_UNLINKED_ON_ENTITY_DELETE), transitive closure gate + bare-handle prose linter (_pack_closure_analyzer.py 265 L, _pack_closure_helpers.py 234 L, _pack_closure_lint.py 121 L), structured-only URI/slot/tier scrubber + O(1) PII/infra/secret leak scanner + deterministic .zip renderer (_pack_export_*.py), /api/v1/packs/composer CRUD/members/publish/export & delete guards (pack_composer.py 258 L, _entity_delete_rbac.py 250 L, _packs_export_legacy_route.py 131 L, 0-diff OpenAPI SDK); all non-barrel Story 31.5 .py files <= 299 L; verified 94% 31-module scoped branch coverage (2,095 stmts / 790 branches, 136 tests), 1,296 passed tests/unit, 193 passed evals/security/contract, 15 passed (6 + 9) PG18+Redis+S3 testcontainers, 9/9 Turbo (544 JS/TS tests), ruff (1,915 files)/mypy --strict (948 files)/lint-imports (5/5, 907 files, 6,581 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, and gitnexus analyze (50,631 nodes / 218,736 edges / 849 clusters / 1,527 flows)."
+    },
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.4",
+      "reportFile": "31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning-tech-lead-report.md",
+      "domain": "Epic 31 Lot 3 — Workspace Pack Activation, Slot Bindings, 422 Unbound Guard & run_lock_manifests Pinning (D2, D5, R4, R5, A1, A2, CAP-055, CAP-056, CAP-082, CAP-140, CAP-160)",
+      "summary": "Closed (done, bmad-architect-worker APPROVED, independent Testing Verifier verified): added pure slot-readiness evaluator (slot_guard.py 269 L) & WorkspacePacksService (236 L), transactional workspace activation/deactivation/slot-binding/DEFERRABLE priority reorder SQL (_sql_workspace_pack_queries.py 294 L, _sql_workspace_pack_views.py 270 L, _sql_workspace_pack_mutations.py 288 L, _sql_workspace_pack_reorder.py 111 L, _sql_workspace_slot_bindings.py 293 L, audit_ledger PACK_SLOTS_BOUND), immutable run_lock_manifests pinning & active-run delete protection (_sql_run_lock_pinning.py 252 L, _sql_run_lock_reads.py 177 L, run_lock_guard.py 135 L, _sql_pack_delete_tx.py 146 L 409 ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS), /api/v1/workspaces/{workspace_id}/packs & /api/v1/runs/{run_id}/lock routes + fail-closed 422 ERR_PACK_SLOT_UNBOUND pre-run guard (workspace_packs.py 238 L, _workspace_packs_guards.py 147 L, _workflows_pack_lock_helpers.py 146 L, _workflows_run_state_helpers.py 89 L), and 0-diff OpenAPI 3.1 SDK; all 29 new .py files <= 300 L; verified 97% scoped branch coverage (930 stmts/274 branches, 114 tests), 193 passed evals/security/contract, 11 passed (6 + 5) PG18+Redis+S3 testcontainers, 9/9 Turbo, ruff (1,864 files)/mypy --strict (917 files)/lint-imports (5/5, 907 files, 6,581 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, and gitnexus analyze (49,879 nodes / 196,291 edges / 831 clusters / 1,524 flows)."
+    },
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.3",
+      "reportFile": "31-3-qualified-pack-namespacing-and-flat-workspace-pack-ontology-tech-lead-report.md",
+      "domain": "Epic 31 Lot 2 — Qualified {pack_slug}:{entity_slug} / @<pack>/<slug> Namespacing & Flat Priority-Ordered Workspace Pack Ontology (D6.a, R1, R3, R4, CAP-070, CAP-082, CAP-090, CAP-100, CAP-200)",
+      "summary": "Closed (done, independent Testing Verifier verified): extracted pure namespacing primitives (domain/namespacing.py 131 L, _namespacing_parser.py 218 L, packs/namespacing.py 120 L, catalog/_uri_parser.py 85 L) normalizing pack://, <pack>:<entity>, @<pack>/<slug>, /<pack>/<slug>, and orcia://packs/... with 409 ERR_PACK_ENTITY_AMBIGUOUS; wired flat workspace-pack ontology, DNA mechanisms, broker policies & pack instructions (sql_pack_ontology_resolution.py 146 L, _sql_pack_flat_loaders.py 208 L, OntologyHierarchyResolver, GET /api/v1/ontology-rag/ontology/effective) respecting workspace_overrides > priority_order ASC > SYSTEM and DEFERRABLE priority swaps without pack-to-pack inheritance; updated agents/skills SQL hydration & lifecycle guards (_agents_namespacing.py 232 L, _sql_agents_pack_queries.py 118 L, _topology_sync.py 205 L), OpenAPI SDK (0-diff), and UI autocomplete collision badges (assistantAutocompleteHelpers.ts 236 L, AssistantAutocompleteDropdown.tsx 79 L); all production files <= 300 L; verified 98% scoped branch coverage (95 tests), 1,242 passed tests/unit, 193 passed evals/security/contract, 9 passed PG18+Redis+S3 testcontainers, 9/9 Turbo (20+154+370 = 544 JS/TS tests), ruff (1,834 files)/mypy --strict (901 files)/lint-imports (5/5, 944 files, 6,839 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, and gitnexus analyze (49,317 nodes / 180,705 edges / 805 clusters / 1,520 flows)."
+    },
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.2",
+      "reportFile": "31-2-transactional-pack-import-day0-seed-and-purge-disk-ts-hardcoding-tech-lead-report.md",
+      "domain": "Epic 31 Lot 2 — PackImportService (SeaweedFsPackCasAdapter + Atomic PG18 Materialization), Day-0 Seed Cutover, Purge of Disk/TS Pack Hardcoding & GET/POST /import/DELETE Pack Endpoints (CAP-055, CAP-056, CAP-082, CAP-090, CAP-140, CAP-200)",
+      "summary": "Closed (done, independent Testing Verifier verified): implemented PackImportService (import_service.py 295 L, seaweedfs_pack_cas.py 121 L, _sql_pack_import_tx.py 239 L, _sql_pack_delete_tx.py 158 L, 4 materializer modules <= 297 L with dynamic connector_schemes), added AND pack_bundle_id IS NULL isolation across standalone SQL queries, cut over Day-0 startup (_lifespan_infra.py) & 09_reset_db_first_boot.py / reset_day0.py to seed packs/sdlc & packs/orcia-docs (apm.yml + x-orcia:), exposed GET /api/v1/packs, POST /api/v1/packs/import, DELETE /api/v1/packs/{bundle_id} (packs.py 274 L, _packs_router_helpers.py 271 L, 0-diff OpenAPI SDK), eliminated runtime disk scans in packs.py & _workflows_helpers.py, and deleted hardcoded TS pack catalogs (packAgentsCatalog*.ts, processStudioV2StructuralPacks.ts, settingsPacksPresets.ts); all production files <= 299 L; verified 93% scoped branch coverage (114 tests), 1,232 passed tests/unit, 193 passed evals/security/contract, 10 passed PG18+Redis+S3 testcontainers, 9/9 Turbo (543 JS/TS tests), 6 passed (1.3m) Desktop Playwright E2E (08, 18, env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,819 files)/mypy --strict (892 files)/lint-imports (5/5, 935 files)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean."
+    },
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.1",
+      "reportFile": "31-1-pack-bundles-v2-ddl-and-native-apm-codec-tech-lead-report.md",
+      "domain": "Epic 31 Lot 1 — declarative_pack_bundles v2 DDL (20261126_311), Scoped Constituent Tables, 4 New Pack v2 Tables, 'pack' Scheme & Native APM-Superset Codec (D1, D3, D4, D6, A1, CAP-055, CAP-056, CAP-082, CAP-090)",
+      "summary": "Closed (done, independent Testing Verifier verified): shipped raw-SQL single-statement Alembic 20261126_311_declarative_packs_v2.py (294 L, upgrade -> downgrade -> upgrade on PG18) extending declarative_pack_bundles + 7 child pack_bundle_id FKs/partial unique indexes + pack_dna_mechanisms, pack_draft_memberships, workspace_pack_activations (DEFERRABLE priority + cross-workspace trigger), workspace_pack_slot_bindings, 'pack' scheme (0192c4e0-0000-7000-8000-00000000c008) + Day-0 reset guards; built hexagonal orcia_core.packs (models.py, ports.py, 8 bilingual RFC 9457 errors.py/_error_catalog.py wired in _registry_extra_classes.py, ApmPackCodec + legacy pack.yaml compat + zip-slip/zip-bomb/ERR_PACK_EXECUTABLE_HOOK_FORBIDDEN/YAML/Starlark AST & PASS-FAIL guards sharing _starlark_ast_whitelist.py, SqlPackBundleV2Repository wired in _lifespan_services.py); all 40/40 .py files <= 299 L; verified 94% scoped branch coverage (90 tests), 1,221 passed tests/unit (+ test_site_catalog_sync.py), 193 passed evals/security/contract, 4 passed PG18+Redis+S3 testcontainers, 9/9 Turbo (543 JS/TS tests), ruff (1,800 files)/mypy --strict (881 files)/lint-imports (5/5, 924 files)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 30.6",

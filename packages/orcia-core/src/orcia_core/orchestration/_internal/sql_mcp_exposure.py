@@ -121,7 +121,7 @@ class SqlMcpExposureRepository:
                         'ORCIA', '1.0.0', :sha256, :cas_key, :visibility_scope,
                         :owner_org_unit_id, 'MCP_EXPOSED_AGENT', CAST(:metadata_jsonb AS jsonb)
                     )
-                    ON CONFLICT (resource_id) DO UPDATE SET
+                    ON CONFLICT (resource_id) WHERE pack_bundle_id IS NULL DO UPDATE SET
                         title = EXCLUDED.title,
                         description = EXCLUDED.description,
                         sha256 = EXCLUDED.sha256,

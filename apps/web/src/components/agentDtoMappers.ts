@@ -54,6 +54,14 @@ export function mapSkillDtoToUi(s: ApiSkillDto, defaultFormat: string): UiManage
     lastExecutionOutput: null,
     visibilityScope: (s.visibility_scope ?? "TEAM") as UiAgentSkillVisibilityScope,
     sourcePackKey: s.source_pack_key ?? null,
+    packSlug: s.pack_slug ?? null,
+    qualifiedRef: s.qualified_ref ?? "",
+    isColliding: Boolean(s.is_colliding),
+    collisionPackSlugs: s.collision_pack_slugs ?? [],
+    resolutionTier: (s.resolution_tier ?? "WORKSPACE_OVERRIDE") as
+      | "WORKSPACE_OVERRIDE"
+      | "WORKSPACE_PACK"
+      | "SYSTEM_PACK",
   };
 }
 
@@ -92,5 +100,13 @@ export function mapAgentDtoToUi(a: ApiAgentDto): UiManagedAgentItem {
     lifecycleStatus: (a.lifecycle_status ?? "DRAFT") as UiAgentLifecycleStatus,
     testBenchStatus: (a.test_bench_status ??
       (a.test_bench_validated ? "PASSED" : "UNTESTED")) as UiAgentTestBenchStatus,
+    packSlug: a.pack_slug ?? null,
+    qualifiedRef: a.qualified_ref ?? "",
+    isColliding: Boolean(a.is_colliding),
+    collisionPackSlugs: a.collision_pack_slugs ?? [],
+    resolutionTier: (a.resolution_tier ?? "WORKSPACE_OVERRIDE") as
+      | "WORKSPACE_OVERRIDE"
+      | "WORKSPACE_PACK"
+      | "SYSTEM_PACK",
   };
 }

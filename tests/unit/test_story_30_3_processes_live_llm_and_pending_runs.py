@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.unit.fakes.workflows_seed import create_seeded_test_app as create_app
 
-from orcia_api.main import create_app
 from orcia_core.agents import GatewayReflexiveLlmAdapter
 from orcia_core.agents.errors import ProcessModelNotConfiguredError
 from orcia_core.ports.llm_port import (

@@ -13,7 +13,7 @@ export function extractAutocompleteTrigger(promptText: string): {
   readonly kind: "agent" | "skill";
   readonly query: string;
 } | null {
-  const match = /(?:^|\s)(@|\/)([a-zA-Z0-9_-]*)$/.exec(promptText);
+  const match = /(?:^|\s)(@|\/)([a-zA-Z0-9_/:.-]*)$/.exec(promptText);
   if (!match) return null;
   const prefix = match[1];
   const query = (match[2] ?? "").toLowerCase();
@@ -27,7 +27,7 @@ export function applyAutocompleteSuggestionToPrompt(
   promptText: string,
   token: string,
 ): string {
-  return promptText.replace(/(?:^|\s)(?:@|\/)[a-zA-Z0-9_-]*$/, (m) => {
+  return promptText.replace(/(?:^|\s)(?:@|\/)[a-zA-Z0-9_/:.-]*$/, (m) => {
     const leadingSpace = m.startsWith(" ") ? " " : "";
     return `${leadingSpace}${token} `;
   });
@@ -56,7 +56,7 @@ export function AssistantAutocompleteDropdown({
           type="button"
           role="option"
           aria-selected={false}
-          data-testid={`assistant-autocomplete-option-${item.token.slice(1)}`}
+          data-testid={`assistant-autocomplete-option-${item.token.slice(1).replace(/[/:]/g, "-")}`}
           onClick={() => onSelectSuggestion(item)}
           className="flex w-full items-center justify-between gap-2 rounded px-2.5 py-1.5 text-left hover:bg-surface-secondary"
         >

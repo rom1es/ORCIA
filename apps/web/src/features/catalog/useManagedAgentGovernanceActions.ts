@@ -5,18 +5,16 @@ import type {
   UiAgentThinkingLevel,
   UiManagedAgentItem,
 } from "@orcia/ui";
-import type { ConfiguredPackItem } from "../../components/platformSetupStore";
 import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import type { AlertFeedbackInput } from "../shared/alertFeedback";
-import { type CatalogManagedLabels, mapAgentDtoToUi } from "./managedAgentsHelpers";
 import {
   type CachedAgentsAndSkillsState,
-  mergeManagedStateWithActivePacks,
-} from "./packAgentsCatalog";
+  type CatalogManagedLabels,
+  mapAgentDtoToUi,
+} from "./managedAgentsHelpers";
 
 export function useManagedAgentGovernanceActions(params: {
-  readonly activePacks: readonly ConfiguredPackItem[];
   readonly locale: SupportedWebLocale;
   readonly catalogLabels: CatalogManagedLabels;
   readonly onFeedback: (msg: AlertFeedbackInput) => void;
@@ -25,11 +23,9 @@ export function useManagedAgentGovernanceActions(params: {
     updater: (prev: CachedAgentsAndSkillsState) => CachedAgentsAndSkillsState,
   ) => void;
 }) {
-  const { activePacks, locale, catalogLabels, onFeedback, onModalError, updateManagedState } = params;
+  const { locale, catalogLabels, onFeedback, onModalError, updateManagedState } = params;
   const resolveAgents = (prev: CachedAgentsAndSkillsState): readonly UiManagedAgentItem[] =>
-    prev.agents.length > 0
-      ? prev.agents
-      : mergeManagedStateWithActivePacks(prev, activePacks).agents;
+    prev.agents;
 
   const reportError = (err: unknown, context: string, inModal = false): string => {
     const detail = formatRfc9457ErrorToBanner(err, locale, context).fullText;

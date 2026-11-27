@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
+from tests.unit.fakes.workflows_seed import create_seeded_test_app as create_app
 
 from orcia_api.dependencies.core_and_lifespan import (
     _init_redis_and_sse,
@@ -22,7 +23,6 @@ from orcia_api.dependencies.reflexive_execution import (
     get_workflows_v2_runs_sql_store,
     get_workflows_v2_sql_store,
 )
-from orcia_api.main import create_app
 from orcia_api.routers._workflows_pending_runs import (
     load_or_rehydrate_run_state,
     resolve_workflow_run_workspace_id,

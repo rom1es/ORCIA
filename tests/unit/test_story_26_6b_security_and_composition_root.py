@@ -1126,7 +1126,7 @@ async def test_p2_dependencies_edge_branches_for_90_coverage(
     # `scope-global` + PG load fallback in `build_assistant_tool_catalog_context_async`
     app.state.db_engine = object()
 
-    async def _boom_pg(_eng: Any) -> Any:
+    async def _boom_pg(_eng: Any, **_kw: Any) -> Any:
         raise RuntimeError("pg-down")
 
     monkeypatch.setattr(
@@ -1243,7 +1243,7 @@ async def test_p2_dependencies_edge_branches_for_90_coverage(
         is None
     )
 
-    async def _ok_pg(_eng: Any) -> tuple[tuple[Any, ...], tuple[Any, ...]]:
+    async def _ok_pg(_eng: Any, **_kw: Any) -> tuple[tuple[Any, ...], tuple[Any, ...]]:
         return (own_priv,), ()
 
     app.state.db_engine = object()

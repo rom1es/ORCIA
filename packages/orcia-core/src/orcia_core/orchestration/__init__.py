@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from orcia_core.orchestration import seeds as _seeds
+from orcia_core.orchestration._internal._sql_agents_delete import delete_catalog_item_guarded
 from orcia_core.orchestration._internal._sql_orchestration_governance import (
     ensure_run_row_exists_in_session,
     ensure_workflow_definition_sql,
@@ -487,6 +488,7 @@ __all__ = [
     "compute_text_sha256",
     "create_ai_model_mapping_pg18",
     "delete_agent_from_postgres18",
+    "delete_catalog_item_guarded",
     "delete_or_drain_ai_model_mapping_pg18",
     "delete_skill_from_postgres18",
     "ensure_run_row_exists_in_session",

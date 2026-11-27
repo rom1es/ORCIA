@@ -11,18 +11,21 @@ import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import type { AlertFeedbackInput } from "../shared/alertFeedback";
 import {
-  buildAgentUpsertPayload,
-  buildOptimisticAgent,
-  type CatalogManagedLabels,
-  mapAgentDtoToUi,
-} from "./managedAgentsHelpers";
+  executeGuardedAgentDelete,
+  type InterceptPackDraftDeleteFn,
+} from "./managedAgentDeleteHelper";
 import {
   type CachedAgentsAndSkillsState,
-  mergeManagedStateWithActivePacks,
+  type CatalogManagedLabels,
+  buildAgentUpsertPayload,
+  buildOptimisticAgent,
+  mapAgentDtoToUi,
   slugifyIdentifier,
-} from "./packAgentsCatalog";
+} from "./managedAgentsHelpers";
 import { useManagedAgentExecutionActions } from "./useManagedAgentExecutionActions";
 import { useManagedAgentGovernanceActions } from "./useManagedAgentGovernanceActions";
+
+export type { InterceptPackDraftDeleteFn };
 
 export function useManagedAgentActions(params: {
   readonly activePacks: readonly ConfiguredPackItem[];
@@ -30,15 +33,21 @@ export function useManagedAgentActions(params: {
   readonly catalogLabels: CatalogManagedLabels;
   readonly onFeedback: (msg: AlertFeedbackInput) => void;
   readonly onModalError?: (msg: string) => void;
+  readonly onInterceptDraftDeleteError?: InterceptPackDraftDeleteFn;
   readonly updateManagedState: (
     updater: (prev: CachedAgentsAndSkillsState) => CachedAgentsAndSkillsState,
   ) => void;
 }) {
-  const { activePacks, locale, catalogLabels, onFeedback, onModalError, updateManagedState } = params;
+  const {
+    locale,
+    catalogLabels,
+    onFeedback,
+    onModalError,
+    onInterceptDraftDeleteError,
+    updateManagedState,
+  } = params;
   const resolveAgents = (prev: CachedAgentsAndSkillsState): readonly UiManagedAgentItem[] =>
-    prev.agents.length > 0
-      ? prev.agents
-      : mergeManagedStateWithActivePacks(prev, activePacks).agents;
+    prev.agents;
 
   const reportError = (err: unknown, context: string, inModal = false): void => {
     const detail = formatRfc9457ErrorToBanner(err, locale, context).fullText;
@@ -228,30 +237,19 @@ export function useManagedAgentActions(params: {
     }
   };
 
-  const handleDeleteAgent = async (agentId: string): Promise<boolean> => {
-    let previous: UiManagedAgentItem | undefined;
-    updateManagedState((prev) => {
-      previous = prev.agents.find((a) => a.agentId === agentId);
-      return {
-        ...prev,
-        agents: prev.agents.filter((a) => a.agentId !== agentId),
-      };
+  const handleDeleteAgent = async (
+    agentId: string,
+    unlinkFromDraftPacks = false,
+  ): Promise<boolean> =>
+    executeGuardedAgentDelete({
+      agentId,
+      unlinkFromDraftPacks,
+      locale,
+      errorContext: catalogLabels.agentDeleteErrorContext,
+      updateManagedState,
+      reportError,
+      onInterceptDraftDeleteError,
     });
-    try {
-      await createOrciaApiClient({ baseUrl: "", locale }).deleteAgent(agentId);
-      return true;
-    } catch (err: unknown) {
-      if (previous) {
-        const prevItem = previous;
-        updateManagedState((prev) => ({
-          ...prev,
-          agents: [...prev.agents.filter((a) => a.agentId !== agentId), prevItem],
-        }));
-      }
-      reportError(err, catalogLabels.agentDeleteErrorContext, false);
-      return false;
-    }
-  };
 
   const { handleExecuteAgent } = useManagedAgentExecutionActions({
     locale,
@@ -262,7 +260,6 @@ export function useManagedAgentActions(params: {
   });
 
   const governanceActions = useManagedAgentGovernanceActions({
-    activePacks,
     locale,
     catalogLabels,
     onFeedback,

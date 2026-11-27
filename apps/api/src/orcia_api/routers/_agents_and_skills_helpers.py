@@ -12,6 +12,7 @@ from orcia_api.routers.assistant_llm_resolver import resolve_configured_llm_endp
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.agents_and_skills import (
     AgentItemResponse,
+    ResolveAgentOrSkillResponse,
     SkillItemResponse,
     ToggleAgentGovernanceRequest,
 )
@@ -24,6 +25,13 @@ from orcia_core.orchestration import (
     load_agents_and_skills_from_postgres18,
 )
 from orcia_core.orchestration.errors import AgentDraftLifecycleBlockedError
+from orcia_core.packs import (
+    WorkspaceEntityCandidate,
+    format_agent_mention,
+    format_skill_command,
+    load_workspace_active_pack_priorities_pg,
+    resolve_workspace_entity_candidates,
+)
 from orcia_core.ports.llm_streaming_port import (
     LlmEndpointConfig,
     LlmStreamingPort,
@@ -52,7 +60,15 @@ def enforce_not_observer(request: Request, persona_key: str | None) -> None:
 
 def serialize_skill(s: ManagedSkillRecord) -> SkillItemResponse:
     """Serialize `ManagedSkillRecord`."""
-    raw = {**asdict(s), "input_parameters": list(s.input_parameters)}
+    raw = {
+        **asdict(s),
+        "input_parameters": list(s.input_parameters),
+        "collision_pack_slugs": list(s.collision_pack_slugs),
+        "qualified_ref": s.qualified_ref
+        or format_skill_command(
+            s.slug, pack_slug=s.pack_slug, workspace_scoped=(s.pack_slug is None)
+        ),
+    }
     filtered = {k: v for k, v in raw.items() if k in SkillItemResponse.model_fields}
     return SkillItemResponse(**filtered)
 
@@ -66,6 +82,10 @@ def serialize_agent(a: ManagedAgentRecord) -> AgentItemResponse:
     raw["ontology_views"] = list(a.ontology_views)
     raw["mcp_tool_permissions"] = dict(a.mcp_tool_permissions)
     raw["guardrails"] = list(a.guardrails)
+    raw["collision_pack_slugs"] = list(a.collision_pack_slugs)
+    raw["qualified_ref"] = a.qualified_ref or format_agent_mention(
+        a.slug, pack_slug=a.pack_slug, workspace_scoped=(a.pack_slug is None)
+    )
     filtered = {k: v for k, v in raw.items() if k in AgentItemResponse.model_fields}
     return AgentItemResponse(**filtered)
 
@@ -87,15 +107,102 @@ async def run_pg_persistence(
 
 
 async def sync_from_postgres18_if_enabled(
-    request: Request, svc: AgentsAndSkillsManagementService
-) -> None:
+    request: Request,
+    svc: AgentsAndSkillsManagementService,
+    *,
+    workspace_id: str | None = None,
+    unrestricted: bool = True,
+    allowed_workspace_ids: frozenset[str] | None = None,
+    allowed_org_ids: frozenset[str] | None = None,
+) -> dict[str, int]:
     """Hydrate agents & skills from PG18 when DB engine is configured."""
+    priorities: dict[str, int] = {}
 
     async def _load(eng: AsyncEngine) -> None:
-        skills, agents = await load_agents_and_skills_from_postgres18(eng)
-        svc.sync_from_records(skills=skills, agents=agents)
+        nonlocal priorities
+        skills, agents = await load_agents_and_skills_from_postgres18(
+            eng,
+            workspace_id=workspace_id,
+            unrestricted=unrestricted,
+            allowed_workspace_ids=allowed_workspace_ids,
+            allowed_org_ids=allowed_org_ids,
+        )
+        if workspace_id:
+            priorities, _ = await load_workspace_active_pack_priorities_pg(eng, workspace_id)
+        svc.sync_from_records(
+            skills=skills, agents=agents, active_pack_priorities=priorities or None
+        )
 
     await run_pg_persistence(request, _load)
+    return priorities
+
+
+def resolve_entity_for_api(
+    svc: AgentsAndSkillsManagementService,
+    *,
+    raw_ref: str,
+    kind: str,
+    active_pack_priorities: dict[str, int] | None,
+    strict_disambiguation: bool,
+    instance: str,
+    trace_id: str,
+) -> ResolveAgentOrSkillResponse:
+    """Resolve an agent or skill ref with optional strict 409 disambiguation."""
+    records = svc.skills if kind == "skill" else svc.agents
+    default_kind = "skills" if kind == "skill" else "agents"
+    cands = [
+        WorkspaceEntityCandidate(
+            entity_id=r.skill_id if isinstance(r, ManagedSkillRecord) else r.agent_id,
+            entity_slug=r.slug,
+            pack_slug=r.pack_slug,
+            resolution_tier=r.resolution_tier,
+            priority_order=(
+                active_pack_priorities.get(r.pack_slug)
+                if active_pack_priorities and r.pack_slug
+                else None
+            ),
+            is_active_in_workspace=getattr(r, "enabled_in_workspace", True),
+            payload=r,
+        )
+        for r in records
+    ]
+    resolved = resolve_workspace_entity_candidates(
+        raw_ref,
+        cands,
+        default_kind=default_kind,
+        active_pack_priorities=active_pack_priorities,
+        strict_disambiguation=strict_disambiguation,
+        instance=instance,
+    )
+    formatted_cands = [
+        (
+            format_skill_command(
+                c.entity_slug,
+                pack_slug=c.pack_slug,
+                workspace_scoped=(c.resolution_tier == "WORKSPACE_OVERRIDE"),
+            )
+            if kind == "skill"
+            else format_agent_mention(
+                c.entity_slug,
+                pack_slug=c.pack_slug,
+                workspace_scoped=(c.resolution_tier == "WORKSPACE_OVERRIDE"),
+            )
+        )
+        for c in resolved.candidates
+    ]
+    return ResolveAgentOrSkillResponse(
+        kind="skill" if kind == "skill" else "agent",
+        raw_ref=raw_ref,
+        entity_id=resolved.winner.entity_id,
+        slug=resolved.winner.entity_slug,
+        pack_slug=resolved.pack_slug,
+        qualified_ref=resolved.qualified_ref,
+        is_colliding=resolved.is_colliding,
+        collision_pack_slugs=list(resolved.collision_pack_slugs),
+        resolution_tier=resolved.resolution_tier,
+        candidates=formatted_cands,
+        trace_id=trace_id,
+    )
 
 
 async def complete_optional_live_turn(

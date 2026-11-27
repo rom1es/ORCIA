@@ -118,13 +118,19 @@ class SqlWorkflowV2RunsStore:
     async def get_run(self, run_id: str) -> dict[str, Any] | None:
         """Load a `workflow_v2_runs` state JSON payload from PG18 (or memory fallback)."""
         if self._session_maker is not None:
-            stmt = sa.text("SELECT state_jsonb FROM workflow_v2_runs WHERE run_id = :run_id")
+            stmt = sa.text(
+                "SELECT state_jsonb, workspace_id::text "
+                "FROM workflow_v2_runs WHERE run_id = :run_id"
+            )
             try:
                 async with self._session_maker() as session:
                     row = (await session.execute(stmt, {"run_id": run_id})).first()
                 if row is not None:
                     raw = row[0]
-                    return json.loads(raw) if isinstance(raw, str) else dict(raw)
+                    payload = json.loads(raw) if isinstance(raw, str) else dict(raw)
+                    if len(row) > 1 and row[1] and not payload.get("workspace_id"):
+                        payload["workspace_id"] = str(row[1])
+                    return payload
                 if self._strict_sql:
                     return None
             except Exception as exc:
@@ -136,7 +142,12 @@ class SqlWorkflowV2RunsStore:
                 if self._strict_sql:
                     raise
         cached = self._memory_fallback.get(run_id)
-        return dict(cached["state"]) if cached is not None else None
+        if cached is None:
+            return None
+        payload = dict(cached["state"])
+        if cached.get("workspace_id") and not payload.get("workspace_id"):
+            payload["workspace_id"] = cached["workspace_id"]
+        return payload
 
     async def list_pending_and_active_runs(
         self,

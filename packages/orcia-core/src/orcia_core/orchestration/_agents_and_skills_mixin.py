@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import replace
 from typing import TYPE_CHECKING, Literal, cast
 
-from orcia_core.catalog.errors import ValidationDomainError
+from orcia_core.catalog.errors import ResourceNotFoundError, ValidationDomainError
+from orcia_core.domain.namespacing import ResolvedEntityCandidate
 from orcia_core.orchestration._agents_and_skills_executor import (
     duplicate_agent_into_registry,
     execute_managed_agent,
 )
 from orcia_core.orchestration._agents_and_skills_outcomes import ensure_agent_ready_for_activation
+from orcia_core.orchestration._agents_namespacing import (
+    resolve_agent_reference,
+    resolve_skill_reference,
+)
 from orcia_core.orchestration.agents_and_skills_models import (
     AgentExecutionOutcome,
     AgentLifecycleStatus,
@@ -177,6 +183,44 @@ class AgentLifecycleMethodsMixin:
             llm_response_override=llm_response_override,
             run_llm_fn=_run_llm_sync,
         )
+
+    def resolve_agent_ref(
+        self,
+        raw_ref: str,
+        *,
+        active_pack_priorities: Mapping[str, int] | None = None,
+        instance: str | None = None,
+    ) -> ResolvedEntityCandidate:
+        """Resolve a qualified or bare agent handle according to flat workspace priority."""
+        res = resolve_agent_reference(
+            tuple(self._agents.values()),
+            raw_ref,
+            active_pack_priorities=active_pack_priorities,
+        )
+        if res is None:
+            raise ResourceNotFoundError(
+                detail_override=f"Agent reference {raw_ref!r} not found.", instance=instance
+            )
+        return res
+
+    def resolve_skill_ref(
+        self,
+        raw_ref: str,
+        *,
+        active_pack_priorities: Mapping[str, int] | None = None,
+        instance: str | None = None,
+    ) -> ResolvedEntityCandidate:
+        """Resolve a qualified or bare skill handle according to flat workspace priority."""
+        res = resolve_skill_reference(
+            tuple(self._skills.values()),
+            raw_ref,
+            active_pack_priorities=active_pack_priorities,
+        )
+        if res is None:
+            raise ResourceNotFoundError(
+                detail_override=f"Skill reference {raw_ref!r} not found.", instance=instance
+            )
+        return res
 
 
 __all__ = ["AgentLifecycleMethodsMixin"]

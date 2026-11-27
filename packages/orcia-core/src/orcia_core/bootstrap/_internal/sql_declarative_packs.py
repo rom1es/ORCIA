@@ -134,48 +134,79 @@ async def upsert_declarative_pack_bundles_sql(
         ).scalar()
         if exists is None:
             return []
+        has_v2_cols = bool(
+            (
+                await conn.execute(
+                    sa.text(
+                        "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
+                        "WHERE table_schema = 'public' AND table_name = 'declarative_pack_bundles' "
+                        "AND column_name = 'archive_sha256')"
+                    )
+                )
+            ).scalar()
+        )
         for bundle in bundle_list:
             m = bundle.manifest
             sha256_val = str(bundle.bundle_sha256).strip()[:64].ljust(64, "0")
-            await conn.execute(
-                sa.text(
-                    "DELETE FROM declarative_pack_bundles "
-                    "WHERE slug = :slug AND pack_id <> :pack_id"
-                ),
-                {"slug": m.slug[:128], "pack_id": m.id[:128]},
-            )
-            row = (
-                await conn.execute(
-                    sa.text(
-                        f"""
-                        INSERT INTO declarative_pack_bundles (
-                            id, pack_id, slug, name, version, rbac_namespace,
-                            bundle_sha256, manifest_jsonb, loaded_at
-                        )
-                        VALUES (
-                            CAST(:id AS uuid), :pack_id, :slug, :name, :version,
-                            :rbac_namespace, :bundle_sha256, CAST(:manifest_jsonb AS jsonb), NOW()
-                        )
-                        ON CONFLICT (pack_id) DO UPDATE SET
-                            slug = EXCLUDED.slug, name = EXCLUDED.name,
-                            version = EXCLUDED.version, rbac_namespace = EXCLUDED.rbac_namespace,
-                            bundle_sha256 = EXCLUDED.bundle_sha256,
-                            manifest_jsonb = EXCLUDED.manifest_jsonb, loaded_at = NOW()
-                        RETURNING {_COLS}
-                        """
-                    ),
-                    {
-                        "id": str(uuid7()),
-                        "pack_id": m.id[:128],
-                        "slug": m.slug[:128],
-                        "name": m.name[:255],
-                        "version": m.version[:64],
-                        "rbac_namespace": m.rbac_namespace[:64],
-                        "bundle_sha256": sha256_val,
-                        "manifest_jsonb": _serialize_bundle_manifest_json(bundle),
-                    },
+            insert_sql = (
+                f"""
+                INSERT INTO declarative_pack_bundles (
+                    id, pack_id, slug, name, version, rbac_namespace,
+                    bundle_sha256, archive_sha256, manifest_jsonb, description,
+                    bundle_kind, scope_type, scope_id, source_origin, status,
+                    published_at, loaded_at, updated_at
                 )
-            ).fetchone()
+                VALUES (
+                    CAST(:id AS uuid), :pack_id, :slug, :name, :version,
+                    :rbac_namespace, :bundle_sha256, :bundle_sha256,
+                    CAST(:manifest_jsonb AS jsonb), :description,
+                    'SYSTEM', 'GLOBAL', 'global', 'LOCAL_SYSTEM', 'PUBLISHED',
+                    NOW(), NOW(), NOW()
+                )
+                ON CONFLICT (scope_type, scope_id, slug, version) DO UPDATE SET
+                    pack_id = EXCLUDED.pack_id, name = EXCLUDED.name,
+                    rbac_namespace = EXCLUDED.rbac_namespace,
+                    bundle_sha256 = EXCLUDED.bundle_sha256,
+                    archive_sha256 = EXCLUDED.archive_sha256,
+                    manifest_jsonb = EXCLUDED.manifest_jsonb,
+                    description = EXCLUDED.description,
+                    bundle_kind = 'SYSTEM', source_origin = 'LOCAL_SYSTEM',
+                    status = 'PUBLISHED',
+                    published_at = COALESCE(declarative_pack_bundles.published_at, NOW()),
+                    loaded_at = NOW(), updated_at = NOW()
+                RETURNING {_COLS}
+                """
+                if has_v2_cols
+                else f"""
+                INSERT INTO declarative_pack_bundles (
+                    id, pack_id, slug, name, version, rbac_namespace,
+                    bundle_sha256, manifest_jsonb, loaded_at
+                )
+                VALUES (
+                    CAST(:id AS uuid), :pack_id, :slug, :name, :version,
+                    :rbac_namespace, :bundle_sha256, CAST(:manifest_jsonb AS jsonb), NOW()
+                )
+                ON CONFLICT (pack_id) DO UPDATE SET
+                    slug = EXCLUDED.slug, name = EXCLUDED.name,
+                    version = EXCLUDED.version, rbac_namespace = EXCLUDED.rbac_namespace,
+                    bundle_sha256 = EXCLUDED.bundle_sha256,
+                    manifest_jsonb = EXCLUDED.manifest_jsonb, loaded_at = NOW()
+                RETURNING {_COLS}
+                """
+            )
+            params: dict[str, Any] = {
+                "id": str(uuid7()),
+                "pack_id": m.id[:128],
+                "slug": m.slug[:128],
+                "name": m.name[:255],
+                "version": m.version[:64],
+                "rbac_namespace": m.rbac_namespace[:64],
+                "bundle_sha256": sha256_val,
+                "manifest_jsonb": _serialize_bundle_manifest_json(bundle),
+            }
+            if has_v2_cols:
+                params["description"] = m.description
+            row = (await conn.execute(sa.text(insert_sql), params)).fetchone()
             if row is not None:
                 records.append(_row_to_record(row))
     return records

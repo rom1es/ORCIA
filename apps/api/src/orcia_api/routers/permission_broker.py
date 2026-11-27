@@ -5,8 +5,14 @@ from __future__ import annotations
 from fastapi import APIRouter, Path, Query, Request
 
 from orcia_api.dependencies import get_auth_service, get_permission_broker_service
+from orcia_api.dependencies._core_providers import get_configured_db_engine
+from orcia_api.routers._entity_delete_rbac import (
+    build_policy_target_authorizer,
+    prepare_entity_delete_guards,
+)
 from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
+from orcia_api.schemas._pack_composer import GuardedEntityDeleteResponse
 from orcia_api.schemas.permission_broker import (
     PermissionBrokerPolicyItem,
     PermissionBrokerStateResponse,
@@ -23,7 +29,8 @@ from orcia_core.permissions import (
     PermissionBrokerPolicy,
     PermissionBrokerTicket,
 )
-from orcia_core.permissions.errors import ObserverModeReadOnlyError
+from orcia_core.permissions.errors import ObserverModeReadOnlyError, ResourceNotFoundError
+from orcia_core.storage.entity_delete_tx import delete_entity_guarded_tx
 
 router = APIRouter(prefix="/api/v1/permissions/broker", tags=["permission-broker"])
 
@@ -201,4 +208,48 @@ async def apply_permission_ticket_action(
     return PermissionTicketActionResponse(
         ticket=_serialize_ticket(updated),
         trace_id=_trace(request),
+    )
+
+
+@router.delete(
+    "/policies/{policy_id}",
+    response_model=GuardedEntityDeleteResponse,
+    summary="Delete a Permission Broker policy with anti-hostage pack-draft guard",
+    responses=PROBLEM_RESPONSES,
+)
+async def delete_permission_policy_endpoint(
+    request: Request,
+    policy_id: str = Path(..., min_length=1, max_length=128),
+    unlink_from_draft_packs: bool = Query(default=False),
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> GuardedEntityDeleteResponse:
+    """Delete a `permission_broker_policies` row with RBAC & `409` draft guard."""
+    inst = str(request.url.path)
+    user, auth_svc, trace_id, authorize_draft = await prepare_entity_delete_guards(
+        request, persona_key=persona_key
+    )
+    engine = get_configured_db_engine(request)
+    if engine is None:
+        raise ResourceNotFoundError(
+            detail_override=f"Policy '{policy_id}' not found.",
+            instance=inst,
+        )
+    outcome = await delete_entity_guarded_tx(
+        engine,
+        entity_type="POLICY",
+        entity_id_or_key=policy_id,
+        unlink_from_draft_packs=unlink_from_draft_packs,
+        authorize_target_cb=build_policy_target_authorizer(auth_svc, user, instance=inst),
+        authorize_draft_cb=authorize_draft,
+        actor_id=user.id,
+        actor_email=user.email,
+        trace_id=trace_id,
+        instance=inst,
+    )
+    return GuardedEntityDeleteResponse(
+        entity_type=outcome.entity_type,
+        deleted_id=outcome.deleted_id,
+        deleted_uuid=outcome.deleted_uuid,
+        unlinked_draft_packs=list(outcome.unlinked_draft_packs),
+        trace_id=trace_id,
     )

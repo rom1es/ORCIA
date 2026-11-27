@@ -41,6 +41,13 @@ class SkillItemResponse(BaseModel):
     visibility_scope: AgentSkillVisibilityScopeSchema = "TEAM"
     source_pack_key: str | None = Field(default=None, max_length=128)
     enabled_in_workspace: bool = True
+    pack_slug: str | None = Field(default=None, max_length=128)
+    qualified_ref: str = Field(default="", max_length=256)
+    is_colliding: bool = False
+    collision_pack_slugs: list[str] = Field(default_factory=list)
+    resolution_tier: Literal["WORKSPACE_OVERRIDE", "WORKSPACE_PACK", "SYSTEM_PACK"] = (
+        "WORKSPACE_OVERRIDE"
+    )
 
 
 class UpsertSkillRequest(BaseModel):
@@ -106,6 +113,13 @@ class AgentItemResponse(BaseModel):
     visibility_scope: AgentSkillVisibilityScopeSchema = "TEAM"
     source_pack_key: str | None = Field(default=None, max_length=128)
     enabled_in_workspace: bool = True
+    pack_slug: str | None = Field(default=None, max_length=128)
+    qualified_ref: str = Field(default="", max_length=256)
+    is_colliding: bool = False
+    collision_pack_slugs: list[str] = Field(default_factory=list)
+    resolution_tier: Literal["WORKSPACE_OVERRIDE", "WORKSPACE_PACK", "SYSTEM_PACK"] = (
+        "WORKSPACE_OVERRIDE"
+    )
     mcp_exposed: bool = False
     agent_kind: AgentKindTypeSchema = "LOCAL"
     remote_endpoint_url: str | None = Field(default=None, max_length=512)
@@ -261,7 +275,24 @@ class DeleteSkillOrAgentResponse(BaseModel):
     """Response payload after deleting a Skill or an Agent."""
 
     model_config = ConfigDict(extra="forbid")
-
     deleted_id: str
     detached_from_agent_ids: list[str] = Field(default_factory=list)
+    unlinked_draft_packs: list[dict[str, str]] = Field(default_factory=list)
+    trace_id: str
+
+
+class ResolveAgentOrSkillResponse(BaseModel):
+    """Deterministic resolution payload for a qualified or bare `@agent` / `/skill` handle."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["agent", "skill"]
+    raw_ref: str
+    entity_id: str
+    slug: str
+    pack_slug: str | None = None
+    qualified_ref: str
+    is_colliding: bool = False
+    collision_pack_slugs: list[str] = Field(default_factory=list)
+    resolution_tier: Literal["WORKSPACE_OVERRIDE", "WORKSPACE_PACK", "SYSTEM_PACK"]
+    candidates: list[str] = Field(default_factory=list)
     trace_id: str

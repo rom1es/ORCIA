@@ -87,6 +87,7 @@ class UpsertSpec:
     conflict_columns: tuple[str, ...]
     value_columns: tuple[str, ...]
     insert_only_columns: tuple[str, ...] = ("id",)
+    conflict_where: str | None = None
 
 
 def _validate_identifier(name: str) -> str:
@@ -112,12 +113,18 @@ def build_postgres_upsert_sql(spec: UpsertSpec) -> str:
     cols_clause = ", ".join(all_cols)
     params_clause = ", ".join(f":{col}" for col in all_cols)
     conflict_clause = ", ".join(conflict_cols)
+    where_clause = ""
+    if spec.conflict_where is not None:
+        cleaned_where = spec.conflict_where.strip()
+        if not cleaned_where or ";" in cleaned_where:
+            raise ValueError(f"Unsafe conflict_where predicate: {spec.conflict_where!r}")
+        where_clause = f" WHERE {cleaned_where}"
     update_clause = ", ".join(f"{col} = EXCLUDED.{col}" for col in update_cols)
 
     return (
         f"INSERT INTO {table} ({cols_clause}) "
         f"VALUES ({params_clause}) "
-        f"ON CONFLICT ({conflict_clause}) DO UPDATE SET {update_clause};"
+        f"ON CONFLICT ({conflict_clause}){where_clause} DO UPDATE SET {update_clause};"
     )
 
 
@@ -136,6 +143,7 @@ WORKSPACE_DATASOURCES_UPSERT_SPEC = UpsertSpec(
 CATALOG_ITEMS_UPSERT_SPEC = UpsertSpec(
     "catalog_items", ("resource_id",),
     ("id", "uri", "title", "description", "resource_type", "source_format", "version", "sha256", "cas_key", "visibility_scope", "owner_org_unit_id", "owner_workspace_id"),  # noqa: E501
+    conflict_where="pack_bundle_id IS NULL",
 )  # fmt: skip
 WORKFLOW_DEFINITIONS_UPSERT_SPEC = UpsertSpec(
     "workflow_definitions", ("uri",),
@@ -148,6 +156,7 @@ CUSTOMIZATION_OVERRIDES_UPSERT_SPEC = UpsertSpec(
 PERMISSION_BROKER_POLICIES_UPSERT_SPEC = UpsertSpec(
     "permission_broker_policies", ("policy_key",),
     ("id", "uri_pattern", "connector_scheme", "required_role", "approver_team", "request_url_template", "sla_hours", "procedure_markdown", "service_principal_allowed", "approved_by_admin_id", "human_anchor_author_id", "human_anchor_signature", "freshness_ttl_days"),  # noqa: E501
+    conflict_where="pack_bundle_id IS NULL",
 )  # fmt: skip
 PERMISSION_BROKER_TICKETS_UPSERT_SPEC = UpsertSpec(
     "permission_broker_tickets", ("ticket_key",),
@@ -189,6 +198,7 @@ HELP_ARTICLES_CATALOG_UPSERT_SPEC = UpsertSpec(
     "catalog_items",
     ("resource_id",),
     ("id", "uri", "title", "description", "resource_type", "source_format", "version", "sha256", "cas_key", "visibility_scope", "owner_org_unit_id", "owner_workspace_id", "item_type", "metadata_jsonb"),  # noqa: E501
+    conflict_where="pack_bundle_id IS NULL",
 )  # fmt: skip
 
 __all__ = [

@@ -427,8 +427,8 @@ async def test_sql_ontology_repository_unit_coverage() -> None:
             )
         if "FROM workspaces" in sql:
             return _FakeResult(rows=[("ws-1", "ws-1", "WS", "bu-1", "STANDARD", 0.0)])
-        if "FROM ontology_concepts WHERE snapshot_branch_status" in sql:
-            return _FakeResult(rows=[c_row])
+        if "FROM ontology_concepts" in sql and "snapshot_branch_status = 'ACTIVE'" in sql:
+            return _FakeResult(rows=[(*c_row, None, None, None)])
         if "SELECT id, concept_key, level, scope_id FROM ontology_concepts" in sql:
             if state["existing_concept"] and _params.get("concept_key") == "c-key":
                 return _FakeResult(rows=[(cid, "c-key", "4_WORKSPACE", "ws-1")])

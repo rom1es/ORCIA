@@ -53,6 +53,23 @@ export interface components {
       leases: (components["schemas"]["ResourceLeaseItemResponse"])[];
       trace_id: string;
     };
+    ActivateWorkspacePackRequest: {
+      bundle_id?: string | null;
+      priority_order?: number | null;
+      slot_bindings?: (components["schemas"]["WorkspacePackSlotBindingInputSchema"])[];
+      version?: string | null;
+    };
+    ActivateWorkspacePackResponse: {
+      activated_at_iso: string;
+      activation_id: string;
+      is_active?: boolean;
+      pack_bundle_id: string;
+      pack_slug: string;
+      priority_order: number;
+      trace_id: string;
+      version: string;
+      workspace_id: string;
+    };
     ActiveBackgroundTurnStatusResponse: {
       assembled_system_prompt?: string;
       elapsed_ms?: number;
@@ -69,6 +86,7 @@ export interface components {
       agent_id: string;
       agent_kind?: "LOCAL" | "REMOTE_MCP_A2A";
       allowed_rag_sources?: (string)[];
+      collision_pack_slugs?: (string)[];
       dialogue_mechanism?: "questionnaire_prealable" | "pause_par_bloc" | "direct";
       enabled_in_workspace?: boolean;
       guardrails?: (string)[];
@@ -76,6 +94,7 @@ export interface components {
       human_partner_role?: "PO_PM" | "ARCHITECT" | "TECH_LEAD" | "SECURITY_QA" | "ALL";
       instructions: string;
       invocation_modes?: (string)[];
+      is_colliding?: boolean;
       lifecycle_status?: "DRAFT" | "ACTIVE";
       llm_model_tier?: "team_default" | "fast" | "deep" | "discovery";
       max_tokens?: number;
@@ -84,9 +103,12 @@ export interface components {
       name: string;
       ontology_views?: (string)[];
       output_contract_format?: "markdown_structure" | "confluence_draft" | "jira_draft" | "gate_risk_json";
+      pack_slug?: string | null;
       posture?: "PRODUCER" | "EVALUATOR_GATE";
       prompt_ref?: string | null;
+      qualified_ref?: string;
       remote_endpoint_url?: string | null;
+      resolution_tier?: "WORKSPACE_OVERRIDE" | "WORKSPACE_PACK" | "SYSTEM_PACK";
       role_mission: string;
       sha256?: string;
       skill_ids?: (string)[];
@@ -673,6 +695,16 @@ export interface components {
       report: components["schemas"]["BackgroundAuditReportSchemaItem"];
       trace_id: string;
     };
+    BindWorkspacePackSlotsRequest: {
+      bindings: (components["schemas"]["WorkspacePackSlotBindingInputSchema"])[];
+      bundle_id?: string | null;
+    };
+    BindWorkspacePackSlotsResponse: {
+      pack_slug: string;
+      slot_bindings: (components["schemas"]["WorkspacePackSlotBindingItemResponse"])[];
+      trace_id: string;
+      workspace_id: string;
+    };
     BlackboardSnapshotSchemaItem: {
       artifact_cas_key: string;
       artifact_payload: Record<string, unknown>;
@@ -885,6 +917,12 @@ export interface components {
       sse_event: components["schemas"]["SseEventEnvelopeResponse"];
       trace_id: string;
       viewer_presence_state: "UNCLAIMED" | "CLAIMED_BY_ME" | "CLAIMED_BY_PEER";
+    };
+    ClosureMissingDependencyResponse: {
+      entity_id: string;
+      entity_type: string;
+      reason: string;
+      referenced_by: string;
     };
     CodegraphActiveRepoResponse: {
       alias: string;
@@ -1154,6 +1192,19 @@ export interface components {
       working_attachments_uris?: (string)[];
       workspace_id: string;
     };
+    CreatePackDraftRequest: {
+      author?: string;
+      declared_slots?: (components["schemas"]["PackComposerSlotSchema"])[];
+      description?: string;
+      license?: string;
+      maintainers?: (string)[];
+      name: string;
+      quick_actions?: (components["schemas"]["PackComposerQuickActionSchema"])[];
+      scope_id: string;
+      scope_type?: "BU" | "TEAM" | "WORKSPACE";
+      slug: string;
+      version?: string;
+    };
     CreateWorkflowTriggerRequest: {
       auto_help_on_publish?: boolean;
       cooldown_window_seconds?: number;
@@ -1202,6 +1253,13 @@ export interface components {
       schema_version: string;
       workspace_id: string;
     };
+    DeactivateWorkspacePackResponse: {
+      is_active?: boolean;
+      pack_bundle_id: string;
+      pack_slug: string;
+      trace_id: string;
+      workspace_id: string;
+    };
     DeclarativeOverrideLayerResponse: {
       base_layer: string;
       spine_contract_ref: string;
@@ -1214,8 +1272,13 @@ export interface components {
     DeclarativePackSummaryResponse: {
       agents_count: number;
       agents_slugs?: (string)[];
+      archive_sha256?: string;
+      bundle_id?: string;
+      bundle_kind?: string;
       bundle_sha256: string;
+      cas_object_key?: string | null;
       connector_health?: (components["schemas"]["ConnectorRequirementHealthItemResponse"])[];
+      declared_slots?: (components["schemas"]["PackSlotSpec"])[];
       description: string;
       gates_count: number;
       gates_slugs?: (string)[];
@@ -1224,9 +1287,12 @@ export interface components {
       quick_actions?: (components["schemas"]["QuickActionSpec"])[];
       rbac_namespace: string;
       required_connectors?: (components["schemas"]["RequiredConnectorSpec"])[];
+      scope_id?: string;
+      scope_type?: string;
       skills_count: number;
       skills_slugs?: (string)[];
       slug: string;
+      status?: string;
       version: string;
       vsm_count: number;
       workflows_count: number;
@@ -1251,6 +1317,7 @@ export interface components {
       deleted_id: string;
       detached_from_agent_ids?: (string)[];
       trace_id: string;
+      unlinked_draft_packs?: (Record<string, string>)[];
     };
     DeleteWorkflowTriggerResponse: {
       deleted_id: string;
@@ -1832,6 +1899,13 @@ export interface components {
     GrantDeleteResponse: {
       deleted_id: string;
       trace_id: string;
+    };
+    GuardedEntityDeleteResponse: {
+      deleted_id: string;
+      deleted_uuid: string;
+      entity_type: string;
+      trace_id: string;
+      unlinked_draft_packs?: (Record<string, string>)[];
     };
     GuidanceStepItemResponse: {
       action_command: string;
@@ -2567,6 +2641,8 @@ export interface components {
       id: string;
       introduced_in_snapshot_id?: string | null;
       level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
+      pack_bundle_id?: string | null;
+      pack_slug?: string | null;
       parent_concept_id?: string | null;
       profile_translations: Record<string, string>;
       scope_id: string;
@@ -2586,6 +2662,8 @@ export interface components {
       level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
       next_promotion_level?: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL" | null;
       next_promotion_scope_id?: string | null;
+      pack_bundle_id?: string | null;
+      pack_slug?: string | null;
       parent_concept_id?: string | null;
       profile_translations: Record<string, string>;
       scope_id: string;
@@ -2675,7 +2753,11 @@ export interface components {
       workspace_scope_id?: string;
     };
     OntologyResolveResponse: {
+      active_pack_priorities?: Record<string, number>;
+      broker_policies?: (Record<string, unknown>)[];
       concepts: (components["schemas"]["OntologyConceptSchemaItem"])[];
+      dna_mechanisms?: (Record<string, unknown>)[];
+      instructions?: (Record<string, unknown>)[];
       profile_labels: Record<string, string>;
       relations: (components["schemas"]["OntologyRelationSchemaItem"])[];
       trace_id?: string | null;
@@ -2800,6 +2882,145 @@ export interface components {
       event_ids: (string)[];
       replayed_count: number;
       scanned_count: number;
+    };
+    PackClosureReportResponse: {
+      auto_included_count?: number;
+      complete: boolean;
+      missing_dependencies?: (components["schemas"]["ClosureMissingDependencyResponse"])[];
+      non_active_dependencies?: (components["schemas"]["ClosureMissingDependencyResponse"])[];
+      prose_lint_warnings?: (components["schemas"]["ProseLintWarningResponse"])[];
+    };
+    PackComposerQuickActionSchema: {
+      icon?: string;
+      id: string;
+      label: string;
+      target_workflow_slug: string;
+    };
+    PackComposerSlotSchema: {
+      connector_kind?: string;
+      description_en?: string;
+      description_fr?: string;
+      required?: boolean;
+      required_access?: (string)[];
+      scheme: string;
+      slot_key: string;
+      source_nature?: string;
+    };
+    PackDeleteResponse: {
+      bundle_id: string;
+      deleted?: boolean;
+      slug: string;
+      trace_id: string;
+      version: string;
+    };
+    PackDraftDeleteResponse: {
+      bundle_id: string;
+      deleted?: boolean;
+      slug: string;
+      trace_id: string;
+      version: string;
+    };
+    PackDraftDetailResponse: {
+      archive_sha256?: string;
+      author?: string;
+      bundle_id: string;
+      bundle_kind?: string;
+      cas_object_key?: string | null;
+      closure?: components["schemas"]["PackClosureReportResponse"] | null;
+      created_by_user_id?: string | null;
+      declared_slots?: (components["schemas"]["PackComposerSlotSchema"])[];
+      description?: string;
+      license?: string;
+      maintainers?: (string)[];
+      members?: (components["schemas"]["PackDraftMemberResponse"])[];
+      name: string;
+      pack_id: string;
+      published_at_iso?: string | null;
+      quick_actions?: (components["schemas"]["PackComposerQuickActionSchema"])[];
+      scope_id?: string;
+      scope_type?: string;
+      slug: string;
+      source_origin?: string;
+      status?: string;
+      trace_id?: string;
+      updated_at_iso?: string;
+      version: string;
+    };
+    PackDraftListResponse: {
+      drafts?: (components["schemas"]["PackDraftDetailResponse"])[];
+      trace_id?: string;
+    };
+    PackDraftMemberInputSchema: {
+      entity_id: string;
+      entity_slug?: string | null;
+      entity_type: "AGENT" | "SKILL" | "INSTRUCTION" | "WORKFLOW_V2" | "VSM_V2" | "ONTOLOGY_CONCEPT" | "ONTOLOGY_RELATION" | "ONTOLOGY_AXIOM" | "DNA_MECHANISM" | "POLICY" | "HELP_ARTICLE";
+    };
+    PackDraftMemberResponse: {
+      catalog_item_id?: string | null;
+      created_at_iso?: string;
+      dna_mechanism_id?: string | null;
+      draft_bundle_id: string;
+      entity_id: string;
+      entity_slug: string;
+      entity_type: "AGENT" | "SKILL" | "INSTRUCTION" | "WORKFLOW_V2" | "VSM_V2" | "ONTOLOGY_CONCEPT" | "ONTOLOGY_RELATION" | "ONTOLOGY_AXIOM" | "DNA_MECHANISM" | "POLICY" | "HELP_ARTICLE";
+      id: string;
+      lifecycle_status?: string;
+      ontology_axiom_id?: string | null;
+      ontology_concept_id?: string | null;
+      ontology_relation_id?: string | null;
+      policy_id?: string | null;
+      title?: string;
+      vsm_v2_id?: string | null;
+      workflow_v2_id?: string | null;
+    };
+    PackExportRequest: {
+      auto_include_dependencies?: boolean;
+    };
+    PackImportEntityCountsResponse: {
+      agents?: number;
+      dna_mechanisms?: number;
+      help_articles?: number;
+      instructions?: number;
+      ontology_terms?: number;
+      policies?: number;
+      skills?: number;
+      vsm?: number;
+      workflows?: number;
+    };
+    PackImportRequest: {
+      replace_draft?: boolean;
+      scope_id?: string | null;
+      scope_type?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE" | null;
+      zip_base64: string;
+    };
+    PackImportResponse: {
+      archive_sha256: string;
+      bundle_id: string;
+      bundle_kind: string;
+      cas_object_key?: string | null;
+      counts: components["schemas"]["PackImportEntityCountsResponse"];
+      idempotent_noop?: boolean;
+      name: string;
+      pack_id: string;
+      scope_id: string;
+      scope_type: string;
+      slug: string;
+      status: string;
+      trace_id: string;
+      version: string;
+    };
+    PackPublishRequest: {
+      auto_include_dependencies?: boolean;
+    };
+    PackSlotSpec: {
+      connector_kind?: string;
+      description_en?: string;
+      description_fr?: string;
+      required?: boolean;
+      required_access?: (string)[];
+      scheme: string;
+      slot_key: string;
+      source_nature?: string;
     };
     PacksConnectorHealthResponse: {
       all_healthy: boolean;
@@ -2941,6 +3162,14 @@ export interface components {
       ticket_key: string;
       workflow_uri: string;
     };
+    PinnedPackManifestSchema: {
+      archive_sha256: string;
+      pack_bundle_id: string;
+      pack_slug: string;
+      priority_order: number;
+      resolved_pack_slots?: (components["schemas"]["ResolvedPackSlotSchema"])[];
+      version: string;
+    };
     PlatformAuthSettingsResponse: {
       auth_mode: "LOCAL" | "SSO";
       boot_epoch: string;
@@ -3048,8 +3277,11 @@ export interface components {
     };
     ProblemDetails: {
       detail: string;
+      draft_packs?: (Record<string, string>)[] | null;
       error_code: string;
       instance?: string | null;
+      leak_findings?: (Record<string, string>)[] | null;
+      missing_dependencies?: (Record<string, string>)[] | null;
       permission_broker_hint?: string | null;
       progress_percentage?: number | null;
       status: number;
@@ -3085,6 +3317,12 @@ export interface components {
       model_family: string;
       model_name: string;
       provider_slug: string;
+    };
+    ProseLintWarningResponse: {
+      entity_slug: string;
+      entity_type: string;
+      message: string;
+      token: string;
     };
     PublicAuthConfigResponse: {
       auth_mode: "LOCAL" | "SSO";
@@ -3294,6 +3532,19 @@ export interface components {
       total_reported_cost_eur?: number;
       units_breakdown?: Record<string, number>;
     };
+    ReorderWorkspacePacksRequest: {
+      ordered_pack_slugs: (string)[];
+    };
+    ReorderWorkspacePacksResponse: {
+      packs: (components["schemas"]["ReorderedWorkspacePackItemResponse"])[];
+      trace_id: string;
+      workspace_id: string;
+    };
+    ReorderedWorkspacePackItemResponse: {
+      pack_bundle_id: string;
+      pack_slug: string;
+      priority_order: number;
+    };
     RequestedWritePreviewInput: {
       action?: string;
       action_summary: string;
@@ -3326,6 +3577,19 @@ export interface components {
       reset_at: string;
       reset_by: string;
     };
+    ResolveAgentOrSkillResponse: {
+      candidates?: (string)[];
+      collision_pack_slugs?: (string)[];
+      entity_id: string;
+      is_colliding?: boolean;
+      kind: "agent" | "skill";
+      pack_slug?: string | null;
+      qualified_ref: string;
+      raw_ref: string;
+      resolution_tier: "WORKSPACE_OVERRIDE" | "WORKSPACE_PACK" | "SYSTEM_PACK";
+      slug: string;
+      trace_id: string;
+    };
     ResolveArtifactDestinationRequest: {
       artifact_slug: string;
       artifact_type: string;
@@ -3343,6 +3607,17 @@ export interface components {
       resolved_uri: string;
       selected_level: "1_RUN_OVERRIDE" | "2_WORKFLOW_STEP_TARGET" | "3_WORKSPACE_DEFAULT" | "4_ORCIA_VAULT_FALLBACK";
       staged_for_gate_publication: boolean;
+    };
+    ResolvedPackSlotSchema: {
+      connector_scheme?: string | null;
+      pack_slug: string;
+      required: boolean;
+      scheme: string;
+      slot_key: string;
+      status: "bound" | "optional_unbound";
+      target_id?: string | null;
+      target_kind: "UNBOUND" | "WORKSPACE_DATASOURCE" | "ENTERPRISE_CONNECTOR" | "INTERNAL";
+      target_uri?: string | null;
     };
     ResourceDiscoveryResponse: {
       allowed_verbs: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
@@ -3430,6 +3705,18 @@ export interface components {
       workflow_version: string;
       workspace_id: string;
     };
+    RunLockManifestReadResponse: {
+      locked_at_iso?: string;
+      manifest_sha256: string;
+      pinned_packs?: (components["schemas"]["PinnedPackManifestSchema"])[];
+      resolved_pack_slots?: (components["schemas"]["ResolvedPackSlotSchema"])[];
+      run_id: string;
+      trace_id: string;
+      workflow_id?: string;
+      workflow_slug?: string;
+      workflow_version?: string;
+      workspace_id: string;
+    };
     RunLockSourceTripletItem: {
       alias: string;
       cas_key: string;
@@ -3501,6 +3788,9 @@ export interface components {
       updated_at: string;
       updated_by: string;
     };
+    SetPackDraftMembersRequest: {
+      members?: (components["schemas"]["PackDraftMemberInputSchema"])[];
+    };
     SetWorkflowBaselineRequest: {
       manual_cost_usd: number;
       manual_time_minutes: number;
@@ -3551,13 +3841,18 @@ export interface components {
       preview_id: string;
     };
     SkillItemResponse: {
+      collision_pack_slugs?: (string)[];
       command_handle: string;
       enabled_in_workspace?: boolean;
       expected_output_format?: string;
       input_parameters?: (string)[];
       instructions: string;
+      is_colliding?: boolean;
       name: string;
       objective: string;
+      pack_slug?: string | null;
+      qualified_ref?: string;
+      resolution_tier?: "WORKSPACE_OVERRIDE" | "WORKSPACE_PACK" | "SYSTEM_PACK";
       sha256?: string;
       skill_id: string;
       slug: string;
@@ -4080,6 +4375,16 @@ export interface components {
       service_kind?: string | null;
       unit_tariff_eur?: number;
       valuation_mode?: "NATIVE_TELEMETRY" | "FIXED_SCALE" | "VOLUMETRIC_ONLY";
+    };
+    UpdatePackDraftRequest: {
+      author?: string | null;
+      declared_slots?: (components["schemas"]["PackComposerSlotSchema"])[] | null;
+      description?: string | null;
+      license?: string | null;
+      maintainers?: (string)[] | null;
+      name?: string | null;
+      quick_actions?: (components["schemas"]["PackComposerQuickActionSchema"])[] | null;
+      version?: string | null;
     };
     UpdatePlatformAuthSettingsRequest: {
       auth_mode: "LOCAL" | "SSO";
@@ -4879,6 +5184,58 @@ export interface components {
       workspace_id: string;
       workspace_instructions: string;
     };
+    WorkspacePackItemResponse: {
+      activated_at_iso?: string | null;
+      activated_by?: string | null;
+      archive_sha256: string;
+      author?: string | null;
+      bundle_id: string;
+      bundle_kind: string;
+      cas_object_key?: string | null;
+      declared_slots?: (components["schemas"]["PackSlotSpec"])[];
+      description?: string;
+      is_active?: boolean;
+      missing_slots?: (string)[];
+      name: string;
+      pack_id: string;
+      priority_order?: number | null;
+      readiness_ok?: boolean;
+      scope_id: string;
+      scope_type: string;
+      slot_bindings?: (components["schemas"]["WorkspacePackSlotBindingItemResponse"])[];
+      slug: string;
+      status: string;
+      version: string;
+    };
+    WorkspacePackSlotBindingInputSchema: {
+      connector_scheme?: string | null;
+      slot_key: string;
+      target_id?: string | null;
+      target_kind: "UNBOUND" | "WORKSPACE_DATASOURCE" | "ENTERPRISE_CONNECTOR" | "INTERNAL";
+    };
+    WorkspacePackSlotBindingItemResponse: {
+      bound_at_iso?: string;
+      bound_by?: string;
+      bound_connector_id?: string | null;
+      bound_datasource_id?: string | null;
+      connector_scheme?: string | null;
+      id?: string;
+      is_effective_bound?: boolean;
+      pack_bundle_id?: string;
+      pack_slug: string;
+      slot_key: string;
+      target_display_name?: string | null;
+      target_enabled?: boolean;
+      target_id?: string | null;
+      target_kind: "UNBOUND" | "WORKSPACE_DATASOURCE" | "ENTERPRISE_CONNECTOR" | "INTERNAL";
+      target_uri?: string | null;
+      workspace_id: string;
+    };
+    WorkspacePacksListResponse: {
+      packs: (components["schemas"]["WorkspacePackItemResponse"])[];
+      trace_id: string;
+      workspace_id: string;
+    };
     WorkspacePatchRequest: {
       lifecycle_phase?: "BUILD" | "RUN" | "MIGRATION" | null;
       name?: string | null;
@@ -5020,6 +5377,13 @@ export interface paths {
     patch: {
       responses: {
         200: components["schemas"]["AgentItemResponse"];
+      };
+    };
+  };
+  "/api/v1/agents-and-skills/resolve": {
+    get: {
+      responses: {
+        200: components["schemas"]["ResolveAgentOrSkillResponse"];
       };
     };
   };
@@ -5378,6 +5742,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/catalog/instructions/{instruction_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
+      };
+    };
+  };
   "/api/v1/catalog/items": {
     get: {
       responses: {
@@ -5651,6 +6022,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/help/{article_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
+      };
+    };
+  };
   "/api/v1/inbox/notifications": {
     get: {
       responses: {
@@ -5726,6 +6104,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/ontology-rag/ontology/axioms/{axiom_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
+      };
+    };
+  };
   "/api/v1/ontology-rag/ontology/concepts": {
     get: {
       responses: {
@@ -5735,6 +6120,20 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["OntologyConceptSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/concepts/{concept_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/effective": {
+    get: {
+      responses: {
+        200: components["schemas"]["OntologyResolveResponse"];
       };
     };
   };
@@ -5761,6 +6160,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["OntologyPromotionDecideResponse"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/relations/{relation_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
       };
     };
   };
@@ -6019,6 +6425,63 @@ export interface paths {
       };
     };
   };
+  "/api/v1/packs/composer": {
+    get: {
+      responses: {
+        200: components["schemas"]["PackDraftListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/packs/composer/dna-mechanisms/{mechanism_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
+      };
+    };
+  };
+  "/api/v1/packs/composer/{draft_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["PackDraftDeleteResponse"];
+      };
+    };
+    get: {
+      responses: {
+        200: components["schemas"]["PackDraftDetailResponse"];
+      };
+    };
+    patch: {
+      responses: {
+        200: components["schemas"]["PackDraftDetailResponse"];
+      };
+    };
+  };
+  "/api/v1/packs/composer/{draft_id}/export": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/packs/composer/{draft_id}/members": {
+    put: {
+      responses: {
+        200: components["schemas"]["PackDraftDetailResponse"];
+      };
+    };
+  };
+  "/api/v1/packs/composer/{draft_id}/publish": {
+    post: {
+      responses: {
+        200: components["schemas"]["PackDraftDetailResponse"];
+      };
+    };
+  };
   "/api/v1/packs/export/{workspace_id}": {
     post: {
       responses: {
@@ -6033,6 +6496,27 @@ export interface paths {
       };
     };
   };
+  "/api/v1/packs/import": {
+    post: {
+      responses: {
+        200: components["schemas"]["PackImportResponse"];
+      };
+    };
+  };
+  "/api/v1/packs/{bundle_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["PackDeleteResponse"];
+      };
+    };
+  };
+  "/api/v1/packs/{bundle_id}/export": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
   "/api/v1/permissions/broker/check-access": {
     post: {
       responses: {
@@ -6044,6 +6528,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["PermissionPolicyImportMarkdownResponse"];
+      };
+    };
+  };
+  "/api/v1/permissions/broker/policies/{policy_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
       };
     };
   };
@@ -6114,6 +6605,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["InvalidateAndRestoreResponse"];
+      };
+    };
+  };
+  "/api/v1/runs/{run_id}/lock": {
+    get: {
+      responses: {
+        200: components["schemas"]["RunLockManifestReadResponse"];
       };
     };
   };
@@ -6470,6 +6968,11 @@ export interface paths {
     };
   };
   "/api/v1/vsm/{vsm_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
+      };
+    };
     get: {
       responses: {
         200: components["schemas"]["ValueStreamMapSpec"];
@@ -6554,6 +7057,11 @@ export interface paths {
     };
   };
   "/api/v1/workflows/v2/{workflow_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["GuardedEntityDeleteResponse"];
+      };
+    };
     get: {
       responses: {
         200: components["schemas"]["WorkflowDefinitionV2-Output"];
@@ -6744,6 +7252,41 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/packs": {
+    get: {
+      responses: {
+        200: components["schemas"]["WorkspacePacksListResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/packs/reorder": {
+    put: {
+      responses: {
+        200: components["schemas"]["ReorderWorkspacePacksResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/packs/{slug}/activate": {
+    post: {
+      responses: {
+        200: components["schemas"]["ActivateWorkspacePackResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/packs/{slug}/deactivate": {
+    delete: {
+      responses: {
+        200: components["schemas"]["DeactivateWorkspacePackResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/packs/{slug}/slots": {
+    put: {
+      responses: {
+        200: components["schemas"]["BindWorkspacePackSlotsResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/workflows/ticket-to-tech-spec": {
     post: {
       responses: {
@@ -6828,6 +7371,8 @@ export type AccostageMilestoneItem = components["schemas"]["AccostageMilestoneIt
 export type AccostageStatusResponse = components["schemas"]["AccostageStatusResponse"];
 export type AcquireResourceLeasesRequest = components["schemas"]["AcquireResourceLeasesRequest"];
 export type AcquireResourceLeasesResponse = components["schemas"]["AcquireResourceLeasesResponse"];
+export type ActivateWorkspacePackRequest = components["schemas"]["ActivateWorkspacePackRequest"];
+export type ActivateWorkspacePackResponse = components["schemas"]["ActivateWorkspacePackResponse"];
 export type ActiveBackgroundTurnStatusResponse = components["schemas"]["ActiveBackgroundTurnStatusResponse"];
 export type AgentItemResponse = components["schemas"]["AgentItemResponse"];
 export type AgentTraceEvent = components["schemas"]["AgentTraceEvent"];
@@ -6882,6 +7427,8 @@ export type AutonomyContractStateResponse = components["schemas"]["AutonomyContr
 export type BackgroundAuditReportSchemaItem = components["schemas"]["BackgroundAuditReportSchemaItem"];
 export type BackgroundAuditRunRequest = components["schemas"]["BackgroundAuditRunRequest"];
 export type BackgroundAuditRunResponse = components["schemas"]["BackgroundAuditRunResponse"];
+export type BindWorkspacePackSlotsRequest = components["schemas"]["BindWorkspacePackSlotsRequest"];
+export type BindWorkspacePackSlotsResponse = components["schemas"]["BindWorkspacePackSlotsResponse"];
 export type BlackboardSnapshotSchemaItem = components["schemas"]["BlackboardSnapshotSchemaItem"];
 export type BmadSkillPackImportRequest = components["schemas"]["BmadSkillPackImportRequest"];
 export type BmadSkillPackImportResponse = components["schemas"]["BmadSkillPackImportResponse"];
@@ -6907,6 +7454,7 @@ export type ClaimCheckPointer = components["schemas"]["ClaimCheckPointer"];
 export type ClaimCheckPointerItem = components["schemas"]["ClaimCheckPointerItem"];
 export type ClaimTaskRequest = components["schemas"]["ClaimTaskRequest"];
 export type ClaimTaskResponse = components["schemas"]["ClaimTaskResponse"];
+export type ClosureMissingDependencyResponse = components["schemas"]["ClosureMissingDependencyResponse"];
 export type CodegraphActiveRepoResponse = components["schemas"]["CodegraphActiveRepoResponse"];
 export type CodegraphToolItemResponse = components["schemas"]["CodegraphToolItemResponse"];
 export type CodegraphToolsListResponse = components["schemas"]["CodegraphToolsListResponse"];
@@ -6938,10 +7486,12 @@ export type CreateAssistantThreadRequest = components["schemas"]["CreateAssistan
 export type CreateBusinessPackRequest = components["schemas"]["CreateBusinessPackRequest"];
 export type CreateBusinessPackResponse = components["schemas"]["CreateBusinessPackResponse"];
 export type CreateOrUpdateAssistantFolderRequest = components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
+export type CreatePackDraftRequest = components["schemas"]["CreatePackDraftRequest"];
 export type CreateWorkflowTriggerRequest = components["schemas"]["CreateWorkflowTriggerRequest"];
 export type CreateWorkspaceDatasourceRequest = components["schemas"]["CreateWorkspaceDatasourceRequest"];
 export type DatasourceWebhookIngressResponse = components["schemas"]["DatasourceWebhookIngressResponse"];
 export type DbDdlIndexRequest = components["schemas"]["DbDdlIndexRequest"];
+export type DeactivateWorkspacePackResponse = components["schemas"]["DeactivateWorkspacePackResponse"];
 export type DeclarativeOverrideLayerResponse = components["schemas"]["DeclarativeOverrideLayerResponse"];
 export type DeclarativePackSummaryResponse = components["schemas"]["DeclarativePackSummaryResponse"];
 export type DeclarativePacksListResponse = components["schemas"]["DeclarativePacksListResponse"];
@@ -7011,6 +7561,7 @@ export type GlossaryCandidateSchema = components["schemas"]["GlossaryCandidateSc
 export type GovernedMcpInvokeRequest = components["schemas"]["GovernedMcpInvokeRequest"];
 export type GovernedMcpInvokeResponse = components["schemas"]["GovernedMcpInvokeResponse"];
 export type GrantDeleteResponse = components["schemas"]["GrantDeleteResponse"];
+export type GuardedEntityDeleteResponse = components["schemas"]["GuardedEntityDeleteResponse"];
 export type GuidanceStepItemResponse = components["schemas"]["GuidanceStepItemResponse"];
 export type HealthResponse = components["schemas"]["HealthResponse"];
 export type HelpArticleSchemaItem = components["schemas"]["HelpArticleSchemaItem"];
@@ -7126,6 +7677,21 @@ export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
 export type OrgUnitsListResponse = components["schemas"]["OrgUnitsListResponse"];
 export type OutboxReplayRequest = components["schemas"]["OutboxReplayRequest"];
 export type OutboxReplayResponse = components["schemas"]["OutboxReplayResponse"];
+export type PackClosureReportResponse = components["schemas"]["PackClosureReportResponse"];
+export type PackComposerQuickActionSchema = components["schemas"]["PackComposerQuickActionSchema"];
+export type PackComposerSlotSchema = components["schemas"]["PackComposerSlotSchema"];
+export type PackDeleteResponse = components["schemas"]["PackDeleteResponse"];
+export type PackDraftDeleteResponse = components["schemas"]["PackDraftDeleteResponse"];
+export type PackDraftDetailResponse = components["schemas"]["PackDraftDetailResponse"];
+export type PackDraftListResponse = components["schemas"]["PackDraftListResponse"];
+export type PackDraftMemberInputSchema = components["schemas"]["PackDraftMemberInputSchema"];
+export type PackDraftMemberResponse = components["schemas"]["PackDraftMemberResponse"];
+export type PackExportRequest = components["schemas"]["PackExportRequest"];
+export type PackImportEntityCountsResponse = components["schemas"]["PackImportEntityCountsResponse"];
+export type PackImportRequest = components["schemas"]["PackImportRequest"];
+export type PackImportResponse = components["schemas"]["PackImportResponse"];
+export type PackPublishRequest = components["schemas"]["PackPublishRequest"];
+export type PackSlotSpec = components["schemas"]["PackSlotSpec"];
 export type PacksConnectorHealthResponse = components["schemas"]["PacksConnectorHealthResponse"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];
@@ -7142,6 +7708,7 @@ export type PermissionPolicyImportMarkdownResponse = components["schemas"]["Perm
 export type PermissionTicketActionRequest = components["schemas"]["PermissionTicketActionRequest"];
 export type PermissionTicketActionResponse = components["schemas"]["PermissionTicketActionResponse"];
 export type PilotWorkflowRunResponse = components["schemas"]["PilotWorkflowRunResponse"];
+export type PinnedPackManifestSchema = components["schemas"]["PinnedPackManifestSchema"];
 export type PlatformAuthSettingsResponse = components["schemas"]["PlatformAuthSettingsResponse"];
 export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
 export type PlatformSetupStatePublicResponse = components["schemas"]["PlatformSetupStatePublicResponse"];
@@ -7157,6 +7724,7 @@ export type ProcessOrchestrationType = components["schemas"]["ProcessOrchestrati
 export type ProcessPendingRunItemResponse = components["schemas"]["ProcessPendingRunItemResponse"];
 export type ProcessPendingRunsListResponse = components["schemas"]["ProcessPendingRunsListResponse"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
+export type ProseLintWarningResponse = components["schemas"]["ProseLintWarningResponse"];
 export type PublicAuthConfigResponse = components["schemas"]["PublicAuthConfigResponse"];
 export type QuickActionSpec = components["schemas"]["QuickActionSpec"];
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
@@ -7177,14 +7745,19 @@ export type RemoteServiceTelemetryItemResponse = components["schemas"]["RemoteSe
 export type RemoteServiceTestAndDiscoverRequest = components["schemas"]["RemoteServiceTestAndDiscoverRequest"];
 export type RemoteServiceTestAndDiscoverResponse = components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
 export type RemoteServicesListResponse = components["schemas"]["RemoteServicesListResponse"];
+export type ReorderWorkspacePacksRequest = components["schemas"]["ReorderWorkspacePacksRequest"];
+export type ReorderWorkspacePacksResponse = components["schemas"]["ReorderWorkspacePacksResponse"];
+export type ReorderedWorkspacePackItemResponse = components["schemas"]["ReorderedWorkspacePackItemResponse"];
 export type RequestedWritePreviewInput = components["schemas"]["RequestedWritePreviewInput"];
 export type RequiredConnectorSpec = components["schemas"]["RequiredConnectorSpec"];
 export type ResendLoginTwoFactorRequest = components["schemas"]["ResendLoginTwoFactorRequest"];
 export type ResendLoginTwoFactorResponse = components["schemas"]["ResendLoginTwoFactorResponse"];
 export type ResetCircuitBreakerRequest = components["schemas"]["ResetCircuitBreakerRequest"];
 export type ResetCircuitBreakerResponse = components["schemas"]["ResetCircuitBreakerResponse"];
+export type ResolveAgentOrSkillResponse = components["schemas"]["ResolveAgentOrSkillResponse"];
 export type ResolveArtifactDestinationRequest = components["schemas"]["ResolveArtifactDestinationRequest"];
 export type ResolvedArtifactDestinationResponse = components["schemas"]["ResolvedArtifactDestinationResponse"];
+export type ResolvedPackSlotSchema = components["schemas"]["ResolvedPackSlotSchema"];
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];
 export type ResourceLeaseItemResponse = components["schemas"]["ResourceLeaseItemResponse"];
 export type ReturnLoopSpec = components["schemas"]["ReturnLoopSpec"];
@@ -7195,6 +7768,7 @@ export type RoleMatrixResponse = components["schemas"]["RoleMatrixResponse"];
 export type RolePermissionGrantResponse = components["schemas"]["RolePermissionGrantResponse"];
 export type RunBlackboardStateResponse = components["schemas"]["RunBlackboardStateResponse"];
 export type RunLockManifestItem = components["schemas"]["RunLockManifestItem"];
+export type RunLockManifestReadResponse = components["schemas"]["RunLockManifestReadResponse"];
 export type RunLockSourceTripletItem = components["schemas"]["RunLockSourceTripletItem"];
 export type RunMutationGuardCheckRequest = components["schemas"]["RunMutationGuardCheckRequest"];
 export type RunMutationGuardCheckResponse = components["schemas"]["RunMutationGuardCheckResponse"];
@@ -7206,6 +7780,7 @@ export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationChe
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type SecretInputPayload = components["schemas"]["SecretInputPayload"];
 export type SecretStatusResponse = components["schemas"]["SecretStatusResponse"];
+export type SetPackDraftMembersRequest = components["schemas"]["SetPackDraftMembersRequest"];
 export type SetWorkflowBaselineRequest = components["schemas"]["SetWorkflowBaselineRequest"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];
@@ -7268,6 +7843,7 @@ export type TwoSpeedSearchHitSchemaItem = components["schemas"]["TwoSpeedSearchH
 export type TwoSpeedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UpdateAgentSkillsRequest = components["schemas"]["UpdateAgentSkillsRequest"];
 export type UpdateConnectorQuotaRequest = components["schemas"]["UpdateConnectorQuotaRequest"];
+export type UpdatePackDraftRequest = components["schemas"]["UpdatePackDraftRequest"];
 export type UpdatePlatformAuthSettingsRequest = components["schemas"]["UpdatePlatformAuthSettingsRequest"];
 export type UpdateScopeBudgetRequest = components["schemas"]["UpdateScopeBudgetRequest"];
 export type UpdateUserLayerPreferencesRequest = components["schemas"]["UpdateUserLayerPreferencesRequest"];
@@ -7344,6 +7920,10 @@ export type WorkspaceDatasourcesListResponse = components["schemas"]["WorkspaceD
 export type WorkspaceFiveTabsStateResponse = components["schemas"]["WorkspaceFiveTabsStateResponse"];
 export type WorkspaceGovernanceItemResponse = components["schemas"]["WorkspaceGovernanceItemResponse"];
 export type WorkspaceLayerSettingsSchemaItem = components["schemas"]["WorkspaceLayerSettingsSchemaItem"];
+export type WorkspacePackItemResponse = components["schemas"]["WorkspacePackItemResponse"];
+export type WorkspacePackSlotBindingInputSchema = components["schemas"]["WorkspacePackSlotBindingInputSchema"];
+export type WorkspacePackSlotBindingItemResponse = components["schemas"]["WorkspacePackSlotBindingItemResponse"];
+export type WorkspacePacksListResponse = components["schemas"]["WorkspacePacksListResponse"];
 export type WorkspacePatchRequest = components["schemas"]["WorkspacePatchRequest"];
 export type WorkspacePatchResponse = components["schemas"]["WorkspacePatchResponse"];
 export type WorkspaceSourceSummarySchema = components["schemas"]["WorkspaceSourceSummarySchema"];

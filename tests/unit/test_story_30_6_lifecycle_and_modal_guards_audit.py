@@ -7,8 +7,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-
-from orcia_api.main import create_app
+from tests.unit.fakes.workflows_seed import create_seeded_test_app as create_app
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 _HIDDEN_DISPLAY_NONE_RE = re.compile(r"""display\s*:\s*["']none["']""")

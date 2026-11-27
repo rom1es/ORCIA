@@ -25,24 +25,41 @@ export function buildAssistantAutocompleteAndRagOptions(params: {
   readonly ragCitations: readonly UiAssistantRagCitationItem[];
 } {
   const autoCopy = resolveDictionaryForFlag(params.isFr ?? true).featureInboxAssistant.autocomplete;
+  const resolveCatalogItemSlug = (
+    item: UiCatalogExplorerItemView,
+    allOfType: readonly UiCatalogExplorerItemView[],
+  ): string => {
+    const shortSlug = item.uri.split("/").pop()?.split("@")[0] ?? item.resourceId;
+    const collisionCount = allOfType.filter(
+      (other) =>
+        (other.uri.split("/").pop()?.split("@")[0] ?? other.resourceId) === shortSlug,
+    ).length;
+    if (collisionCount <= 1) return shortSlug;
+    const match = /^orcia:\/\/packs\/([^/]+)\//i.exec(item.uri);
+    const packSlug = match?.[1]?.toLowerCase() ?? "workspace";
+    return `${packSlug}/${shortSlug}`;
+  };
+
+  const agentCatalogItems = params.catalogItems.filter(
+    (item) => item.resourceType === "agent",
+  );
+  const skillCatalogItems = params.catalogItems.filter(
+    (item) => item.resourceType === "skill",
+  );
   const catalogAgents: readonly UiAssistantAutocompleteOption[] =
-    params.catalogItems
-      .filter((item) => item.resourceType === "agent")
-      .map((item) => ({
-        slug: item.uri.split("/").pop() ?? item.resourceId,
-        label: item.title,
-        description: item.description,
-        kind: "agent" as const,
-      }));
+    agentCatalogItems.map((item) => ({
+      slug: resolveCatalogItemSlug(item, agentCatalogItems),
+      label: item.title,
+      description: item.description,
+      kind: "agent" as const,
+    }));
   const catalogSkills: readonly UiAssistantAutocompleteOption[] =
-    params.catalogItems
-      .filter((item) => item.resourceType === "skill")
-      .map((item) => ({
-        slug: item.uri.split("/").pop() ?? item.resourceId,
-        label: item.title,
-        description: item.description,
-        kind: "skill" as const,
-      }));
+    skillCatalogItems.map((item) => ({
+      slug: resolveCatalogItemSlug(item, skillCatalogItems),
+      label: item.title,
+      description: item.description,
+      kind: "skill" as const,
+    }));
   const agentOptions: readonly UiAssistantAutocompleteOption[] = [
     ...autoCopy.defaultAgents,
     ...catalogAgents.filter(
@@ -135,87 +152,85 @@ export function consumeAssistantPrefillFromStorage(): string | null {
 }
 
 export function buildAssistantAutocompleteSuggestions(
-  activePacks: readonly { readonly packKey: string }[] = [],
+  _activePacks: readonly { readonly packKey: string }[] = [],
   isFr = true,
 ): readonly UiAssistantAutocompleteSuggestion[] {
   const autoCopy = resolveDictionaryForFlag(isFr).featureInboxAssistant.autocomplete;
   const suggestions: UiAssistantAutocompleteSuggestion[] = [];
   const seenTokens = new Set<string>();
   const cached = readCachedAgentsAndSkills();
-  const draftAgentTokens = new Set<string>(
-    (cached.agents ?? [])
-      .filter((ag) => ag.lifecycleStatus === "DRAFT" || ag.enabledOnWorkspace === false)
-      .map((ag) => ag.handle),
-  );
 
-  const resolveScopeBadge = (scope: string | undefined, sourcePackKey?: string | null) =>
+  const resolveScopeBadge = (
+    scope: string | undefined,
+    packSlug?: string | null,
+    sourcePackKey?: string | null,
+  ) =>
     scope === "PRIVATE"
       ? autoCopy.badgePrivate
       : scope === "PACK"
-        ? (sourcePackKey ?? autoCopy.badgePackDefault)
+        ? (packSlug ?? sourcePackKey ?? autoCopy.badgePackDefault)
         : autoCopy.badgeTeam;
 
-  for (const ag of cached.agents ?? []) {
-    if (ag.lifecycleStatus === "DRAFT" || ag.enabledOnWorkspace === false) continue;
-    if (seenTokens.has(ag.handle)) continue;
-    seenTokens.add(ag.handle);
+  const activeAgents = (cached.agents ?? []).filter(
+    (ag) => ag.lifecycleStatus !== "DRAFT" && ag.enabledOnWorkspace !== false,
+  );
+  const agentSlugCounts = new Map<string, number>();
+  for (const ag of activeAgents) {
+    const key = ag.slug.trim().toLowerCase();
+    agentSlugCounts.set(key, (agentSlugCounts.get(key) ?? 0) + 1);
+  }
+  for (const ag of activeAgents) {
+    const key = ag.slug.trim().toLowerCase();
+    const colliding = (agentSlugCounts.get(key) ?? 0) > 1 || Boolean(ag.isColliding);
+    const originPack =
+      ag.packSlug ??
+      (ag.visibilityScope === "PACK"
+        ? (ag.sourcePackKey?.replace(/^orcia-pack-/, "") ?? null)
+        : null);
+    const token = colliding
+      ? ag.qualifiedRef?.trim() ||
+        (originPack ? `@${originPack}/${ag.slug}` : `@workspace/${ag.slug}`)
+      : ag.handle;
+    if (seenTokens.has(token)) continue;
+    seenTokens.add(token);
     suggestions.push({
       id: ag.agentId,
       kind: "agent",
-      token: ag.handle,
+      token,
       name: ag.name,
       description: ag.roleMission,
-      badge: resolveScopeBadge(ag.visibilityScope, ag.sourcePackKey),
+      badge: resolveScopeBadge(ag.visibilityScope, originPack, ag.sourcePackKey),
     });
   }
-  for (const sk of cached.skills ?? []) {
-    if (seenTokens.has(sk.commandHandle)) continue;
-    seenTokens.add(sk.commandHandle);
+
+  const allSkills = cached.skills ?? [];
+  const skillSlugCounts = new Map<string, number>();
+  for (const sk of allSkills) {
+    const key = sk.slug.trim().toLowerCase();
+    skillSlugCounts.set(key, (skillSlugCounts.get(key) ?? 0) + 1);
+  }
+  for (const sk of allSkills) {
+    const key = sk.slug.trim().toLowerCase();
+    const colliding = (skillSlugCounts.get(key) ?? 0) > 1 || Boolean(sk.isColliding);
+    const originPack =
+      sk.packSlug ??
+      (sk.visibilityScope === "PACK"
+        ? (sk.sourcePackKey?.replace(/^orcia-pack-/, "") ?? null)
+        : null);
+    const token = colliding
+      ? sk.qualifiedRef?.trim() ||
+        (originPack ? `/${originPack}/${sk.slug}` : `/workspace/${sk.slug}`)
+      : sk.commandHandle;
+    if (seenTokens.has(token)) continue;
+    seenTokens.add(token);
     suggestions.push({
       id: sk.skillId,
       kind: "skill",
-      token: sk.commandHandle,
+      token,
       name: sk.name,
       description: sk.objective,
-      badge: resolveScopeBadge(sk.visibilityScope, sk.sourcePackKey),
+      badge: resolveScopeBadge(sk.visibilityScope, originPack, sk.sourcePackKey),
     });
-  }
-  for (const pack of activePacks) {
-    if (pack.packKey === "orcia-pack-sdlc") {
-      const sdlcDefaults: readonly UiAssistantAutocompleteSuggestion[] = [
-        {
-          id: "agent-architecte-solution",
-          kind: "agent",
-          token: "@architecte-solution",
-          name: autoCopy.sdlcArchitectName,
-          description: autoCopy.sdlcArchitectDesc,
-          badge: "orcia-pack-sdlc",
-        },
-        {
-          id: "agent-analyste-metier",
-          kind: "agent",
-          token: "@analyste-metier",
-          name: autoCopy.sdlcAnalystName,
-          description: autoCopy.sdlcAnalystDesc,
-          badge: "orcia-pack-sdlc",
-        },
-        {
-          id: "skill-revue-architecture",
-          kind: "skill",
-          token: "/revue-architecture",
-          name: autoCopy.sdlcReviewName,
-          description: autoCopy.sdlcReviewDesc,
-          badge: "orcia-pack-sdlc",
-        },
-      ];
-      for (const item of sdlcDefaults) {
-        if (item.kind === "agent" && draftAgentTokens.has(item.token)) continue;
-        if (!seenTokens.has(item.token)) {
-          seenTokens.add(item.token);
-          suggestions.push(item);
-        }
-      }
-    }
   }
   return suggestions;
 }

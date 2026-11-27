@@ -89,6 +89,51 @@ export const RFC9457_BANNER_FR_LABELS: Rfc9457BannerDictionary = {
         "Un espace personnel privé ne peut pas être converti en espace d'équipe sur place.",
       remediation: "Créez un nouvel espace collectif si vous souhaitez partager avec l'équipe.",
     },
+    ERR_PACK_SLOT_UNBOUND: {
+      title: "Connecteur obligatoire non raccordé",
+      message: "Un ou plusieurs connecteurs requis par ce pack doivent être associés avant activation ou exécution.",
+      remediation: "Ouvrez le panneau des connecteurs du pack et sélectionnez les sources attendues.",
+    },
+    ERR_PACK_CLOSURE_INCOMPLETE: {
+      title: "Dépendances du pack incomplètes",
+      message: "Certains éléments sélectionnés référencent des ressources manquantes ou en brouillon.",
+      remediation: "Ajoutez les éléments manquants ou activez l'inclusion automatique avant publication.",
+    },
+    ERR_PACK_PII_OR_INFRA_LEAK: {
+      title: "Export bloqué pour protection des données",
+      message: "Des données nominatives, clés secrètes ou adresses internes ont été détectées dans le contenu.",
+      remediation: "Retirez ces références sensibles des instructions avant d'exporter l'archive.",
+    },
+    ERR_ENTITY_REFERENCED_BY_PACK_DRAFT: {
+      title: "Élément référencé par un pack en brouillon",
+      message: "Cet élément est actuellement inclus dans un ou plusieurs packs personnalisés en cours de préparation.",
+      remediation: "Confirmez le détachement des brouillons concernés pour finaliser la suppression.",
+    },
+    ERR_PACK_EXECUTABLE_HOOK_FORBIDDEN: {
+      title: "Archive refusée (script exécutable interdit)",
+      message: "Le pack contient des fichiers exécutables ou scripts non autorisés.",
+      remediation: "Supprimez tout script exécutable et conservez uniquement des fichiers déclaratifs.",
+    },
+    ERR_PACK_INVALID_ARCHIVE: {
+      title: "Archive de pack invalide",
+      message: "Le fichier fourni n'est pas une archive de pack valide ou son manifeste est incomplet.",
+      remediation: "Vérifiez la structure de votre archive et réessayez l'importation.",
+    },
+    ERR_PACK_VERSION_CONFLICT: {
+      title: "Conflit de version de pack",
+      message: "Une version différente de ce pack existe déjà pour ce périmètre.",
+      remediation: "Incrémentez le numéro de version ou remplacez le brouillon existant.",
+    },
+    ERR_PACK_SYSTEM_DELETE_FORBIDDEN: {
+      title: "Suppression de pack système refusée",
+      message: "Les packs système fournis par la plateforme ne peuvent pas être désinstallés.",
+      remediation: "Désactivez simplement le pack sur les espaces qui n'en ont pas besoin.",
+    },
+    ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS: {
+      title: "Ressource verrouillée par une exécution active",
+      message: "Ce pack ou connecteur est utilisé par des exécutions en cours.",
+      remediation: "Attendez la fin des exécutions actives avant de supprimer la ressource.",
+    },
   },
   statusFallbacks: {
     401: {

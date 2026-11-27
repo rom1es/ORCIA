@@ -38,6 +38,7 @@ import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
 import type { OntologyGlossaryCopy } from "./locales/ontology_glossary_labels";
+import type { PacksUiDictionarySection } from "./locales/packs_ui_labels";
 import type { ProcessCatalogWorkflowsDictionary } from "./locales/process_catalog_packs_and_workflows_labels";
 import type {
   ProcessCatalogVsmPart1Dictionary,
@@ -96,6 +97,7 @@ export interface TranslationDictionary
   featureInboxAssistant: FeatureInboxAssistantDictionary;
   featureWorkspaces: FeatureWorkspacesDictionary;
   featureAdminCatalogSettings: FeatureAdminCatalogSettingsDictionary;
+  packsUi: PacksUiDictionarySection;
   contextualHelp: ContextualHelpDictionarySection;
   shellNotifications: ShellNotificationsDictionary;
   shellBreadcrumbsAndScope: ShellBreadcrumbsAndScopeDictionary;

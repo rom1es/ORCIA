@@ -68,7 +68,7 @@ async def backfill_ontology_and_rag_graph(
         ":definition_text, CAST(:synonyms_jsonb AS jsonb), "
         "CAST(:banned_terms_jsonb AS jsonb), CAST(:profile_translations_jsonb AS jsonb), "
         "CAST(:expected_schema_jsonb AS jsonb), :introduced_in_snapshot_id, :snapshot_branch_status"
-        ") ON CONFLICT (concept_key) DO UPDATE SET "
+        ") ON CONFLICT (concept_key) WHERE pack_bundle_id IS NULL DO UPDATE SET "
         "definition_text = EXCLUDED.definition_text, "
         "snapshot_branch_status = EXCLUDED.snapshot_branch_status;"
     )
@@ -78,7 +78,7 @@ async def backfill_ontology_and_rag_graph(
         "id, axiom_key, concept_id, level, scope_id, rule_expression, immutable"
         ") VALUES ("
         ":id, :axiom_key, :concept_id, :level, :scope_id, :rule_expression, :immutable"
-        ") ON CONFLICT (axiom_key) DO UPDATE SET "
+        ") ON CONFLICT (axiom_key) WHERE pack_bundle_id IS NULL DO UPDATE SET "
         "rule_expression = EXCLUDED.rule_expression;"
     )
 

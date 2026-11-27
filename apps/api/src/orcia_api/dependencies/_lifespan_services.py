@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any, Literal
 
 from fastapi import FastAPI
@@ -105,6 +106,54 @@ def init_runtime_secondary_services(
         app.state.connector_hub_service = ConnectorHubAndIngestionService()
     if getattr(app.state, "studio_and_pack_service", None) is None:
         app.state.studio_and_pack_service = WorkflowStudioAndPackService()
+    if getattr(app.state, "pack_bundle_v2_repository", None) is None:
+        from orcia_core.packs import SqlPackBundleV2Repository
+
+        app.state.pack_bundle_v2_repository = SqlPackBundleV2Repository(db_engine)
+    if getattr(app.state, "http_client", None) is None or getattr(
+        app.state.http_client, "is_closed", False
+    ):
+        import httpx
+
+        app.state.http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(300.0, connect=10.0),
+            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
+        )
+    if getattr(app.state, "pack_cas_storage", None) is None:
+        s3_ep = (
+            getattr(app.state, "seaweedfs_endpoint_url", None)
+            or os.environ.get("ORCIA_SEAWEEDFS_ENDPOINT_URL")
+            or os.environ.get("SEAWEEDFS_ENDPOINT_URL")
+            or os.environ.get("S3_ENDPOINT_URL")
+            or ""
+        ).strip()
+        if s3_ep:
+            from orcia_core.packs import SeaweedFsPackCasAdapter
+
+            app.state.pack_cas_storage = SeaweedFsPackCasAdapter(
+                endpoint_url=s3_ep,
+                bucket_name=os.environ.get("S3_BUCKET_NAME", "orcia-cas").strip() or "orcia-cas",
+                access_key=os.environ.get("S3_ACCESS_KEY_ID", "orcia_seaweed").strip()
+                or "orcia_seaweed",
+                secret_key=os.environ.get(
+                    "S3_SECRET_ACCESS_KEY",
+                    "orcia_seaweed_secret",  # pragma: allowlist secret
+                ).strip()
+                or "orcia_seaweed_secret",  # pragma: allowlist secret
+                http_client=app.state.http_client,
+            )
+    if getattr(app.state, "pack_import_service", None) is None:
+        from orcia_core.packs import PackImportService
+
+        app.state.pack_import_service = PackImportService(
+            engine=db_engine,
+            cas_storage=getattr(app.state, "pack_cas_storage", None),
+            bundle_repository=app.state.pack_bundle_v2_repository,
+        )
+    if getattr(app.state, "workspace_packs_service", None) is None:
+        from orcia_core.packs import WorkspacePacksService
+
+        app.state.workspace_packs_service = WorkspacePacksService(engine=db_engine)
     if getattr(app.state, "durable_wizard_service", None) is None:
         app.state.durable_wizard_service = DurableOnboardingWizardService(
             repository=SqlWizardSessionRepository(db_engine) if db_engine is not None else None
@@ -145,15 +194,6 @@ def init_runtime_secondary_services(
             orchestration_setup=app.state.orchestration_service,
             workflow_engine=app.state.orchestration_service.engine,
             cognitive_router=app.state.cognitive_router_service,
-        )
-    if getattr(app.state, "http_client", None) is None or getattr(
-        app.state.http_client, "is_closed", False
-    ):
-        import httpx
-
-        app.state.http_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(300.0, connect=10.0),
-            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
         )
     if getattr(app.state, "assistant_turn_tasks", None) is None:
         app.state.assistant_turn_tasks = set()

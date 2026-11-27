@@ -5,6 +5,7 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from orcia_core.ontology.errors import OntologyConflictError
@@ -24,6 +25,9 @@ from orcia_core.ontology.translator import (
     build_ontology_resolution_cte_sql as build_ontology_resolution_cte_sql,
 )
 from orcia_core.ontology.translator import (
+    build_workspace_pack_ontology_cte_sql as build_workspace_pack_ontology_cte_sql,
+)
+from orcia_core.ontology.translator import (
     expand_rag_query_terms,
     validate_blackboard_artifact_schema,
 )
@@ -41,28 +45,36 @@ class OntologyHierarchyResolver:
         team_chain_scope_ids: tuple[str, ...],
         workspace_scope_id: str,
         run_scope_id: str | None,
-    ) -> int | None:
+        active_pack_priorities: Mapping[str, int] | None = None,
+    ) -> tuple[int, int] | None:
         if concept.snapshot_branch_status != "ACTIVE":
             return None
+        if concept.pack_bundle_id is not None or concept.pack_slug is not None:
+            pack_key = (concept.pack_slug or concept.scope_id or "").strip().lower()
+            if active_pack_priorities is not None and pack_key in active_pack_priorities:
+                return (380, -int(active_pack_priorities[pack_key]))
+            if (concept.bundle_kind or "").strip().upper() == "SYSTEM":
+                return (50, 0)
+            return None
         if concept.level == "1_ENTERPRISE" and concept.scope_id == enterprise_scope_id:
-            return 100
+            return (100, 0)
         if concept.level == "2_DOMAIN" and concept.scope_id == domain_scope_id:
-            return 200
+            return (200, 0)
         if concept.level == "3_TEAM" and concept.scope_id in team_chain_scope_ids:
             # team_chain_scope_ids is ordered from Sub-Team (index 0, highest priority) to Parent
             idx = team_chain_scope_ids.index(concept.scope_id)
-            return 350 - idx
+            return (350, -idx)
         if (
             concept.level in ("3_WORKSPACE", "4_WORKSPACE")
             and concept.scope_id == workspace_scope_id
         ):
-            return 400
+            return (400, 0)
         if (
             concept.level == "4_RUN_EPHEMERAL"
             and run_scope_id is not None
             and concept.scope_id == run_scope_id
         ):
-            return 500
+            return (500, 0)
         return None
 
     @classmethod
@@ -77,6 +89,7 @@ class OntologyHierarchyResolver:
         team_chain_scope_ids: tuple[str, ...],
         workspace_scope_id: str,
         run_scope_id: str | None = None,
+        active_pack_priorities: Mapping[str, int] | None = None,
     ) -> ResolvedOntologySnapshot:
         """Resolve merged ontology across L1 -> L2 -> L3_TEAM -> L3_WORKSPACE -> L4_RUN."""
         immutable_axioms_by_term: dict[
@@ -99,7 +112,7 @@ class OntologyHierarchyResolver:
                         (ax, target_concept)
                     )
 
-        applicable: list[tuple[int, OntologyConceptEntity]] = []
+        applicable: list[tuple[tuple[int, int], OntologyConceptEntity]] = []
         for concept in concepts:
             rank = cls._candidate_rank(
                 concept,
@@ -108,6 +121,7 @@ class OntologyHierarchyResolver:
                 team_chain_scope_ids=team_chain_scope_ids,
                 workspace_scope_id=workspace_scope_id,
                 run_scope_id=run_scope_id,
+                active_pack_priorities=active_pack_priorities,
             )
             if rank is not None:
                 applicable.append((rank, concept))
@@ -142,9 +156,10 @@ class OntologyHierarchyResolver:
                     team_chain_scope_ids=team_chain_scope_ids,
                     workspace_scope_id=workspace_scope_id,
                     run_scope_id=run_scope_id,
+                    active_pack_priorities=active_pack_priorities,
                 )
                 if ax_rank is None:
-                    ax_rank = ONTOLOGY_LEVEL_PRIORITY[imm_ax.level] * 100
+                    ax_rank = (ONTOLOGY_LEVEL_PRIORITY[imm_ax.level] * 100, 0)
                 if cand_rank > ax_rank:
                     # Check if specialization contradicts an immutable parent schema or rule
                     existing = dict(ax_concept.expected_schema)
@@ -201,6 +216,9 @@ class OntologyHierarchyResolver:
                 expected_schema=schema,
                 introduced_in_snapshot_id=candidate.introduced_in_snapshot_id,
                 snapshot_branch_status=candidate.snapshot_branch_status,
+                pack_bundle_id=candidate.pack_bundle_id,
+                pack_slug=candidate.pack_slug,
+                bundle_kind=candidate.bundle_kind,
             )
 
         active_keys = {c.concept_key for c in merged_by_term.values()}
@@ -224,6 +242,7 @@ class OntologyHierarchyResolver:
             relations=active_relations,
             axioms=active_axioms,
             resolution_chain_scopes=chain,
+            pack_priorities=dict(active_pack_priorities or {}),
         )
 
     @staticmethod

@@ -81,6 +81,51 @@ export const RFC9457_BANNER_EN_LABELS: Rfc9457BannerDictionary = {
       message: "A private personal workspace cannot change visibility in place.",
       remediation: "Create a new team workspace if you wish to share with teammates.",
     },
+    ERR_PACK_SLOT_UNBOUND: {
+      title: "Required connector slot unbound",
+      message: "One or more required pack connector slots must be bound before activation or execution.",
+      remediation: "Open the pack connector drawer and map each required slot to an authorized target.",
+    },
+    ERR_PACK_CLOSURE_INCOMPLETE: {
+      title: "Incomplete pack dependencies",
+      message: "Selected members reference missing or draft resources that are not yet included.",
+      remediation: "Include the missing items or enable automatic dependency inclusion before publishing.",
+    },
+    ERR_PACK_PII_OR_INFRA_LEAK: {
+      title: "Export blocked for data protection",
+      message: "Personal information, secret references, or internal addresses were detected in the pack.",
+      remediation: "Remove sensitive literals from instructions before exporting the archive.",
+    },
+    ERR_ENTITY_REFERENCED_BY_PACK_DRAFT: {
+      title: "Item referenced by a draft pack",
+      message: "This item is currently included in one or more custom draft packs.",
+      remediation: "Confirm detaching the item from referencing drafts to complete deletion.",
+    },
+    ERR_PACK_EXECUTABLE_HOOK_FORBIDDEN: {
+      title: "Archive rejected (executable script forbidden)",
+      message: "The pack archive contains unauthorized executable files or hooks.",
+      remediation: "Remove executable scripts and provide declarative files only.",
+    },
+    ERR_PACK_INVALID_ARCHIVE: {
+      title: "Invalid pack archive",
+      message: "The uploaded file is not a valid pack archive or its manifest is malformed.",
+      remediation: "Check the archive layout and manifest, then retry importing.",
+    },
+    ERR_PACK_VERSION_CONFLICT: {
+      title: "Pack version conflict",
+      message: "A different bundle already exists under this pack version in the target scope.",
+      remediation: "Bump the pack version or enable replacing the existing draft.",
+    },
+    ERR_PACK_SYSTEM_DELETE_FORBIDDEN: {
+      title: "System pack deletion forbidden",
+      message: "Built-in platform system packs cannot be uninstalled.",
+      remediation: "Deactivate the pack in workspaces where it is not needed.",
+    },
+    ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS: {
+      title: "Resource pinned by active executions",
+      message: "This pack or connector is currently pinned by active process executions.",
+      remediation: "Wait for active runs to complete before removing this resource.",
+    },
   },
   statusFallbacks: {
     401: {

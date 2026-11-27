@@ -15,6 +15,9 @@ from orcia_api.routers.ontology_rag_helpers import (
     serialize_relation,
     serialize_what_if,
 )
+from orcia_api.routers.ontology_rag_helpers import (
+    is_concept_readable as _is_concept_readable,
+)
 from orcia_api.schemas import ontology_and_rag as s
 from orcia_core.ontology import (
     ImpactSimulatorService,
@@ -22,53 +25,16 @@ from orcia_core.ontology import (
     OntologyGovernanceService,
     OntologyHierarchyResolver,
     ProfileSemanticTranslator,
-    can_read_ontology_item,
     list_concepts_pg,
 )
 from orcia_core.ontology.errors import ScopeAccessDeniedError
+from orcia_core.packs import resolve_workspace_pack_ontology_pg
 from orcia_core.permissions.models import (
     OrgUnitNode,
     UserIdentity,
     WorkspaceEntity,
     WorkspaceMembershipEntity,
 )
-
-
-def _is_concept_readable(
-    request: Request,
-    *,
-    user: UserIdentity,
-    concept: OntologyConceptEntity,
-    concepts_by_id: dict[str, OntologyConceptEntity],
-    org_units: Sequence[OrgUnitNode],
-    workspaces: Sequence[WorkspaceEntity],
-    memberships: Sequence[WorkspaceMembershipEntity],
-) -> bool:
-    """Return True if `user` can read `concept` and its parent lineage without leaks."""
-    if not can_read_ontology_item(
-        user, concept.level, concept.scope_id, org_units, workspaces, memberships
-    ):
-        return False
-    auth_svc = get_auth_service(request)
-    if concept.level == "4_RUN_EPHEMERAL":
-        cc_svc = getattr(request.app.state, "control_center_service", None)
-        if cc_svc is not None:
-            run = getattr(cc_svc, "_runs", {}).get(concept.scope_id)
-            if run is not None and (
-                auth_svc.evaluator.resolve_workspace_access(user, run.workspace_id) is None
-            ):
-                return False
-    cursor = concept.parent_concept_id
-    visited: set[str] = set()
-    while cursor and cursor in concepts_by_id and cursor not in visited and len(visited) < 32:
-        visited.add(cursor)
-        parent = concepts_by_id[cursor]
-        if not can_read_ontology_item(
-            user, parent.level, parent.scope_id, org_units, workspaces, memberships
-        ):
-            return False
-        cursor = parent.parent_concept_id
-    return True
 
 
 def _filter_readable_concepts(
@@ -79,6 +45,7 @@ def _filter_readable_concepts(
     org_units: Sequence[OrgUnitNode],
     workspaces: Sequence[WorkspaceEntity],
     memberships: Sequence[WorkspaceMembershipEntity],
+    allowed_pack_slugs: frozenset[str] | None = None,
 ) -> tuple[OntologyConceptEntity, ...]:
     by_id = {c.id: c for c in concepts}
     return tuple(
@@ -92,6 +59,7 @@ def _filter_readable_concepts(
             org_units=org_units,
             workspaces=workspaces,
             memberships=memberships,
+            allowed_pack_slugs=allowed_pack_slugs,
         )
     )
 
@@ -139,8 +107,29 @@ async def resolve_ontology_for_caller(
             raise ScopeAccessDeniedError(instance=path)
 
     raw_concepts = tuple(gov.concepts)
-    if not raw_concepts and engine is not None:
-        raw_concepts = tuple(await list_concepts_pg(engine))
+    active_pack_priorities: dict[str, int] = {}
+    dna_mechanisms: list[dict[str, object]] = []
+    broker_policies: list[dict[str, object]] = []
+    instructions: list[dict[str, object]] = []
+    resolved_ws_scope = body.workspace_scope_id
+    if engine is not None:
+        pack_res = await resolve_workspace_pack_ontology_pg(
+            engine,
+            workspace_id=clean_ws or body.workspace_scope_id,
+            enterprise_scope_id=body.enterprise_scope_id,
+            domain_scope_id=body.domain_scope_id,
+            team_chain_scope_ids=tuple(body.team_chain_scope_ids),
+            run_scope_id=body.run_scope_id,
+        )
+        active_pack_priorities = dict(pack_res.active_pack_priorities)
+        dna_mechanisms = list(pack_res.dna_mechanisms)
+        broker_policies = list(pack_res.broker_policies)
+        instructions = list(pack_res.instructions)
+        resolved_ws_scope = pack_res.workspace_id
+        if not raw_concepts:
+            raw_concepts = tuple(await list_concepts_pg(engine))
+
+    allowed_packs = frozenset(active_pack_priorities.keys())
     readable = _filter_readable_concepts(
         request,
         user=user,
@@ -148,6 +137,7 @@ async def resolve_ontology_for_caller(
         org_units=org_units,
         workspaces=workspaces,
         memberships=memberships,
+        allowed_pack_slugs=allowed_packs,
     )
     readable_keys = {c.concept_key for c in readable}
     safe_relations = tuple(
@@ -162,8 +152,9 @@ async def resolve_ontology_for_caller(
         enterprise_scope_id=body.enterprise_scope_id,
         domain_scope_id=body.domain_scope_id,
         team_chain_scope_ids=tuple(body.team_chain_scope_ids),
-        workspace_scope_id=body.workspace_scope_id,
+        workspace_scope_id=resolved_ws_scope,
         run_scope_id=body.run_scope_id,
+        active_pack_priorities=active_pack_priorities or None,
     )
     labels = {
         term: ProfileSemanticTranslator.translate_concept(c, body.human_profile)
@@ -173,6 +164,10 @@ async def resolve_ontology_for_caller(
         concepts=[serialize_concept(c) for c in snap.concepts_by_term.values()],
         relations=[serialize_relation(r) for r in snap.relations],
         profile_labels=labels,
+        active_pack_priorities=active_pack_priorities,
+        dna_mechanisms=dna_mechanisms,
+        broker_policies=broker_policies,
+        instructions=instructions,
         trace_id=get_trace_id(request),
     )
 

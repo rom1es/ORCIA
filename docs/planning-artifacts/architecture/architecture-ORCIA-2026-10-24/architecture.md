@@ -396,7 +396,7 @@ Pour éliminer le problème du démarrage à froid (*Cold-Start* au Jour 0) et e
 | `workflow_triggers` | Déclencheurs autonomes gouvernés (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON`, `MANUAL_AUTONOMOUS`, `AD-18`, `FR-29`) | `id`, `workspace_id`, `workflow_def_id`, `trigger_type`, `cron_expr`, `webhook_secret_vault_ref`, `event_filter_jsonb`, `cooldown_window_seconds`, `service_principal_id`, `max_runs_per_hour`, `max_daily_cost_usd`, `max_consecutive_failures`, `post_hoc_sampling_rate`, `contract_signature_id`, `status (ACTIVE\|PAUSED\|CIRCUIT_OPEN)` |
 | `workspace_customization_overrides` | Surcharges déclaratives à 4 niveaux (`Base -> Team -> Workspace -> User`, `AD-14`) | `id`, `org_unit_id (nullable)`, `workspace_id (nullable)`, `target_uri`, `user_id (nullable)`, `override_layer (TEAM\|WORKSPACE\|USER)`, `override_manifest_jsonb`, `sha256` |
 | `workflow_runs` | Instances d'exécution (*Runs* et *Sub-Workflows* imbriqués) isolées par *Workspace* (`AD-2`, `AD-18`, `FR-29`, `FR-30`) | `id`, `workspace_id`, `workflow_def_id`, `parent_run_id (nullable)`, `parent_step_execution_id (nullable)`, `root_run_id`, `nesting_depth (int <= 3)`, `execution_regime`, `criticality`, `trigger_id (nullable)`, `trigger_idempotency_key (nullable)`, `status`, `initiated_by_user_id`, `execution_identity_mode`, `budget_max_usd` (`UNIQUE (trigger_id, trigger_idempotency_key)`) |
-| `run_lock_manifests` | Épinglage immuable `run-lock.json` incluant `sub_workflow_locks` récursifs (`AD-5`, `AD-14`, `AD-18`) | `run_id (PK/FK)`, `manifest_jsonb`, `overrides_sha256`, `manifest_sha256`, `locked_at` |
+| `run_lock_manifests` | Épinglage immuable `run-lock.json` incluant `sub_workflow_locks` récursifs et les `active_packs` / `slot_bindings` résolus par le *Workspace* (`AD-5`, `AD-14`, `AD-18`, `Epic 31`) | `run_id (PK/FK)`, `manifest_jsonb` (`active_packs`, `slot_bindings`, `archive_sha256`), `overrides_sha256`, `manifest_sha256`, `locked_at` |
 | `step_executions` | État d'exécution, brouillon et memlog de chaque étape (`AD-2`, `AD-13`) | `id`, `run_id`, `step_key`, `step_type (AGENT\|SKILL\|SUB_WORKFLOW\|POST_ACTION_VERIFICATION)`, `execution_mode (COACHING\|FAST_PATH\|AUTONOMOUS_CONTRACT)`, `status`, `draft_artifact_jsonb`, `draft_cas_key`, `step_memlog_jsonb`, `executor_model_id`, `evaluator_model_id`, `retry_count`, `claimed_by_user_id` |
 | `blackboard_snapshots` | Historique append-only des états validés du *Blackboard* (`AD-2`) | `id`, `run_id`, `parent_snapshot_id`, `step_execution_id`, `branch_status (ACTIVE\|SUPERSEDED)`, `state_jsonb`, `sha256` |
 | `domain_events_outbox` | Table Outbox transactionnelle garantissant la publication idempotente des effets secondaires (`AD-19`, `M6`) | `id (uuid PK)`, `event_type`, `aggregate_type`, `aggregate_id`, `run_id (nullable)`, `step_execution_id (nullable)`, `payload_jsonb`, `trace_id`, `status (PENDING\|PUBLISHED\|FAILED)`, `attempts`, `created_at`, `published_at` |
@@ -413,6 +413,11 @@ Pour éliminer le problème du démarrage à froid (*Cold-Start* au Jour 0) et e
 | `resource_leases` | Baux de ressources partagées avec fencing (Avenant A2, `AD-4`, `DEC-CONC-01`) | `id (uuid PK UUIDv7)`, `resource_uri (UNIQUE)`, `holder_run_id`, `holder_step_execution_id`, `fencing_token (bigint monotone)`, `expires_at` |
 | `assistant_thread_messages` | Persistent `"Mon Assistant"` conversational turn history separated from reflexive tool execution traces (`AD-25`, `D4`) | `id (uuid PK UUIDv7)`, `thread_id (uuid FK -> assistant_threads.thread_id ON DELETE CASCADE)`, `workspace_id (uuid FK -> workspaces.id ON DELETE CASCADE)`, `turn_id (uuid NOT NULL)`, `parent_turn_id (uuid NULL)`, `role VARCHAR(16) CHECK (role IN ('user', 'assistant'))`, `content TEXT`, `citation_map JSONB`, `token_count INTEGER`, `created_at TIMESTAMPTZ`, index `(thread_id, created_at)` (detailed tool traces remain isolated in `reflexive_execution_sessions` keyed by `turn_id`, never re-injected as `role: 'tool'`) |
 | `assistant_turn_feedback` | Idempotent per-user conversational turn feedback persistence (`AD-25`, `R5`) | `id (uuid PK UUIDv7)`, `turn_id (uuid NOT NULL)`, `workspace_id (uuid FK -> workspaces.id ON DELETE CASCADE)`, `user_id (uuid FK -> users.id ON DELETE CASCADE)`, `rating VARCHAR(8) CHECK (rating IN ('up', 'down'))`, `reason_code VARCHAR(64) NULL`, `comment TEXT NULL`, `created_at TIMESTAMPTZ`, `updated_at TIMESTAMPTZ`, `UNIQUE (turn_id, user_id)` upsert constraint |
+| `declarative_pack_bundles` | Registre v2 des packs déclaratifs APM-Superset (`SYSTEM`, `IMPORTED`, `CUSTOM`, cycle `DRAFT`/`PUBLISHED`/`DEPRECATED`) (`Epic 31`) | `id (uuid PK UUIDv7)`, `pack_id`, `slug`, `version`, `rbac_namespace`, `bundle_kind`, `scope_type`, `scope_id`, `status`, `source_origin`, `archive_sha256`, `cas_object_key`, `manifest_jsonb`, `declared_slots_jsonb`, `UNIQUE (scope_type, scope_id, slug, version)`; nullable `pack_bundle_id` (`ON DELETE CASCADE`) sur `catalog_items`, `workflow_definitions_v2`, `vsm_definitions_v2`, `ontology_*`, `permission_broker_policies`; schéma `'pack'` dans `connector_schemes` |
+| `pack_dna_mechanisms` | Mécanismes Starlark de garde gouvernés appartenant à un pack déclaratif et validés en Sandbox Palier 1b (`Epic 31`) | `id (uuid PK UUIDv7)`, `pack_bundle_id (FK -> declarative_pack_bundles ON DELETE CASCADE)`, `mechanism_key`, `mechanism_kind`, `starlark_source`, `ast_sha256`, `passing_test_payload_jsonb`, `failing_test_payload_jsonb`, `UNIQUE (pack_bundle_id, mechanism_key)` |
+| `pack_draft_memberships` | Appartenance typée des entités d'un brouillon `CUSTOM` avec protection anti-otage `ON DELETE RESTRICT` (`Epic 31`) | `id (uuid PK UUIDv7)`, `draft_bundle_id (FK -> declarative_pack_bundles ON DELETE CASCADE)`, `entity_type`, `entity_id`, `entity_slug`, 8 colonnes FK typées (`catalog_item_id`, `workflow_def_v2_id`, `vsm_def_v2_id`, `ontology_concept_id`, `ontology_relation_id`, `ontology_axiom_id`, `broker_policy_id`, `dna_mechanism_id` `ON DELETE RESTRICT`) |
+| `workspace_pack_activations` | Activations exclusives au périmètre `WORKSPACE` avec priorité atomique réordonnançable (`Epic 31`) | `id (uuid PK UUIDv7)`, `workspace_id (FK -> workspaces ON DELETE CASCADE)`, `pack_bundle_id (FK -> declarative_pack_bundles ON DELETE RESTRICT)`, `pack_slug`, `is_active`, `priority_order`, trigger `trg_workspace_pack_activations_scope_guard`, `uq_workspace_pack_priority DEFERRABLE INITIALLY DEFERRED` |
+| `workspace_pack_slot_bindings` | Liaisons explicites des emplacements de connecteurs déclarés d'un pack vers une source ou un connecteur du *Workspace* (`Epic 31`) | `id (uuid PK UUIDv7)`, `workspace_id (FK -> workspaces ON DELETE CASCADE)`, `pack_bundle_id (FK -> declarative_pack_bundles ON DELETE CASCADE)`, `slot_key`, `target_kind (UNBOUND\|WORKSPACE_DATASOURCE\|ENTERPRISE_CONNECTOR\|INTERNAL)`, `bound_datasource_id`, `bound_connector_id`, `connector_scheme`, `UNIQUE (workspace_id, pack_bundle_id, slot_key)` |
 
 > **Architectural Scope Note (`AD-25`, `R2`, `R5`):** Neither `assistant_studio_graphs` (Mode B graphical studio deferred to `ACTION_ITEM-26.1`) nor `assistant_citation_drafts` (draft card actions deleted in `26.7` alongside `_saved_drafts`) exists in the PostgreSQL 18 schema. Phantom citations stripped by server `CitationGuard` and per-tool execution records are persisted directly in append-only `audit_ledger` (`ASSISTANT_PHANTOM_CITATION_PURGED`, `ASSISTANT_TOOL_INVOKED`, `ASSISTANT_TOOL_DENIED`).
 
@@ -428,7 +433,7 @@ Pour éliminer le problème du démarrage à froid (*Cold-Start* au Jour 0) et e
 | **4. Ontologie & KB** | `/ontology`, `/kb` (`features/ontology/`) | `/api/v1/ontology/*`, `/api/v1/kb/*` (`schemas/ontology.py`, `schemas/rag.py`) | `ontology`, `rag` |
 | **5. Gates & Habilitations** | `/gates`, `/permissions` (`features/gates/`) | `/api/v1/gates/*`, `/api/v1/permissions/broker/*` (`schemas/gates.py`, `schemas/permissions.py`) | `gates`, `permissions` |
 | **6. FinOps & Audit** | `/finops`, `/audit` (`features/finops/`) | `/api/v1/finops/*`, `/api/v1/audit/ledger/*` (`schemas/audit_finops.py`) | `audit_finops` |
-| **7. Administration** | `/admin/*` (`features/admin/`) | `/api/v1/admin/*`, `/api/v1/org-units/*`, `/api/v1/workspaces/*` (`schemas/auth.py`, `schemas/bootstrap.py`) | `permissions`, `gates`, `catalog`, `bootstrap` |
+| **7. Administration** | `/admin/*`, `/settings`, `/settings/packs` (`features/admin/`, `features/settings/packs/`) | `/api/v1/admin/*`, `/api/v1/org-units/*`, `/api/v1/workspaces/*`, `/api/v1/workspaces/*/packs/*`, `/api/v1/packs/*`, `/api/v1/packs/composer/*` (`schemas/auth.py`, `schemas/bootstrap.py`, `schemas/packs.py`) | `permissions`, `gates`, `catalog`, `packs`, `bootstrap` |
 
 ---
 
@@ -592,6 +597,12 @@ erDiagram
     WORKSPACES ||--o{ ASSISTANT_TURN_FEEDBACK : "workspace_id (Scoped feedback)"
     USERS ||--o{ ASSISTANT_TURN_FEEDBACK : "user_id (UNIQUE turn_id, user_id)"
     ASSISTANT_THREAD_MESSAGES ||--o| REFLEXIVE_EXECUTION_SESSIONS : "turn_id (Isolated Speed 2/3 tool traces)"
+    DECLARATIVE_PACK_BUNDLES ||--o{ PACK_DNA_MECHANISMS : "pack_bundle_id (Starlark DNA guards)"
+    DECLARATIVE_PACK_BUNDLES ||--o{ PACK_DRAFT_MEMBERSHIPS : "draft_bundle_id (8 typed entity FKs)"
+    DECLARATIVE_PACK_BUNDLES ||--o{ WORKSPACE_PACK_ACTIVATIONS : "pack_bundle_id (Priority-ordered activation)"
+    WORKSPACES ||--o{ WORKSPACE_PACK_ACTIVATIONS : "workspace_id (DEFERRABLE priority_order)"
+    WORKSPACES ||--o{ WORKSPACE_PACK_SLOT_BINDINGS : "workspace_id (Slot -> datasource/connector bindings)"
+    DECLARATIVE_PACK_BUNDLES ||--o{ WORKSPACE_PACK_SLOT_BINDINGS : "pack_slug (Logical connector slots)"
 
     ORG_UNITS {
         uuid id PK
@@ -676,6 +687,54 @@ erDiagram
         varchar status
         jsonb snapshot_jsonb
         timestamptz expires_at
+    }
+    DECLARATIVE_PACK_BUNDLES {
+        uuid id PK
+        varchar pack_id
+        varchar slug
+        varchar version
+        varchar bundle_kind "SYSTEM | ORG | IMPORTED | CUSTOM"
+        varchar scope_type "GLOBAL | BU | TEAM | WORKSPACE"
+        varchar scope_id
+        varchar status "DRAFT | PUBLISHED | DEPRECATED"
+        varchar archive_sha256
+        varchar cas_object_key
+        jsonb declared_slots_jsonb
+    }
+    PACK_DNA_MECHANISMS {
+        uuid id PK
+        uuid pack_bundle_id FK "ON DELETE CASCADE"
+        varchar mechanism_slug
+        text starlark_source
+        varchar source_sha256
+    }
+    PACK_DRAFT_MEMBERSHIPS {
+        uuid id PK
+        uuid draft_bundle_id FK "ON DELETE CASCADE"
+        varchar entity_type
+        varchar entity_id
+        varchar entity_slug
+        uuid catalog_item_id FK "Nullable ON DELETE RESTRICT"
+        uuid workflow_v2_id FK "Nullable ON DELETE RESTRICT"
+        uuid vsm_v2_id FK "Nullable ON DELETE RESTRICT"
+        uuid dna_mechanism_id FK "Nullable ON DELETE RESTRICT"
+    }
+    WORKSPACE_PACK_ACTIVATIONS {
+        uuid id PK
+        uuid workspace_id FK "ON DELETE CASCADE"
+        uuid pack_bundle_id FK "ON DELETE CASCADE"
+        varchar pack_slug
+        int priority_order "DEFERRABLE UNIQUE (workspace_id, priority_order)"
+        boolean is_active
+    }
+    WORKSPACE_PACK_SLOT_BINDINGS {
+        uuid id PK
+        uuid workspace_id FK "ON DELETE CASCADE"
+        varchar pack_slug
+        varchar slot_key
+        varchar target_kind "UNBOUND | WORKSPACE_DATASOURCE | ENTERPRISE_CONNECTOR | INTERNAL"
+        uuid bound_datasource_id FK "Nullable ON DELETE SET NULL"
+        uuid bound_connector_id FK "Nullable ON DELETE SET NULL"
     }
 ```
 

@@ -1,0 +1,67 @@
+name: sdlc
+version: 2.4.0
+description: >-
+  Chaîne de valeur de l'idée à la production (11 étapes, 4 phases, 6 jalons humains,
+  4 agents gouvernés et sas de contrôle externe).
+author: ORCIA Platform
+license: Apache-2.0
+x-orcia:
+  id: orcia-pack-sdlc
+  slug: sdlc
+  title_fr: Pack Ingénierie Logicielle & SDLC (SAFe / Mon Compte)
+  title_en: Software Engineering & SDLC Pack (SAFe / My Account)
+  description_fr: >-
+    Chaîne de valeur de l'idée à la production (11 étapes, 4 phases, 6 jalons humains,
+    4 agents gouvernés et sas de contrôle externe).
+  description_en: >-
+    Idea-to-production value stream (11 steps, 4 phases, 6 human checkpoints,
+    4 governed agents, and external delivery gate).
+  rbac_namespace: sdlc
+  bundle_kind: SYSTEM
+  scope_type: GLOBAL
+  scope_id: global
+  status: PUBLISHED
+  connector_slots:
+    - slot_key: jira-tracker
+      scheme: jira
+      connector_kind: mcp:atlassian-jira
+      source_nature: ISSUE_TRACKER
+      required_access:
+        - read
+        - write_preview
+      required: true
+      description_fr: Lecture/écriture gouvernée des Features, Epics et User Stories Jira
+      description_en: Governed read/write-preview for Jira Features, Epics, and User Stories
+    - slot_key: confluence-kb
+      scheme: confluence
+      connector_kind: mcp:atlassian-confluence
+      source_nature: KNOWLEDGE_BASE
+      required_access:
+        - read
+        - write_preview
+      required: true
+      description_fr: Consultation du socle documentaire et publication des PRD et DA
+      description_en: Documentation base consultation and PRD/Architecture dossier publishing
+    - slot_key: git-repo
+      scheme: git
+      connector_kind: mcp:git-provider
+      source_nature: SOURCE_CODE
+      required_access:
+        - read
+        - webhook
+      required: true
+      description_fr: Lecture de l'arbre d'impact du code et réception des événements PR/MR
+      description_en: Code impact tree inspection and PR/MR webhook events
+  quick_actions:
+    - id: qa-qualif-prd
+      label: Qualifier une demande & rédiger le PRD
+      target_workflow_slug: wf-01-qualification-prd
+      icon: sparkles
+    - id: qa-etude-archi
+      label: Lancer une étude de cadrage d'architecture (DA)
+      target_workflow_slug: wf-03-etude-architecture
+      icon: layers
+    - id: qa-decoupe-us
+      label: Découper une Feature en User Stories INVEST
+      target_workflow_slug: wf-06-decoupe-us
+      icon: list-checks

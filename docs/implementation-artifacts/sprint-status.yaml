@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-26-2026 11:35
+last_updated: 11-26-2026 21:02
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -344,6 +344,20 @@ development_status:
   30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle: done
   30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure: done
   epic-30-retrospective: optional
+
+  # Epic 31 — Declarative APM-Compatible Business Packs, Unified Workspace Activation, Qualified Namespacing & Pack Composer (D1..D6, R1..R5, A1..A4)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-25-epic-31-declarative-apm-packs-import-export.md
+  # Decisions   : docs/implementation-artifacts/epic-31-decisions-grill-2026-11-25.md
+  # Lots        : L1 31-1 -> L2 31-2 -> 31-3 -> L3 31-4 -> L4 31-5 -> L5 31-6 -> L6 31-7
+  epic-31: done
+  31-1-pack-bundles-v2-ddl-and-native-apm-codec: done
+  31-2-transactional-pack-import-day0-seed-and-purge-disk-ts-hardcoding: done
+  31-3-qualified-pack-namespacing-and-flat-workspace-pack-ontology: done
+  31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning: done
+  31-5-pack-composer-anti-hostage-unlink-closure-gate-and-scrubbed-zip-export: done
+  31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui: done
+  31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure: done
+  epic-31-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
@@ -1606,3 +1620,34 @@ action_items:
       extensions are decoupled cleanly here for dedicated backend + PG18 story execution. Item (1) (`PATCH /api/v1/workspaces/{id}`)
       was resolved in `29-2-scoped-workspace-patch-confidential-isolation-rollback-and-single-banner`, while items (2)–(4)
       remain open under `ACTION_ITEM-28.1`.
+  - id: ACTION_ITEM-31.1
+    title: "Outbound MCP HTTP/OpenAPI Connector Runtime & Persistence — deferred (A3)"
+    action: >
+      Wire live outbound MCP HTTP/OpenAPI transport connections declared by external packs beyond built-in ORCIA
+      internal connectors and logical pack slot bindings (workspace_pack_slot_bindings).
+    priority: P2
+    depends_on: ["31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning"]
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-31
+    story_ref: "31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning"
+    ad_ref: "AD-11, AD-24, A3"
+    description: >
+      Deferred explicitly in Epic 31 Grill Decisions (A3). Epic 31 ships logical pack slot bindings to existing
+      workspace_datasources and enterprise_connectors with 422 ERR_PACK_SLOT_UNBOUND and run_lock_manifests pinning;
+      arbitrary external HTTP/OpenAPI MCP server onboarding from packs is decoupled under ACTION_ITEM-31.1.
+  - id: ACTION_ITEM-31.2
+    title: "Org/BU Default Pack Auto-Activation Templates on New Workspace Creation — deferred (D2/R2)"
+    action: >
+      Add optional Org/BU administrative default pack activation templates that auto-seed workspace_pack_activations
+      when creating new team workspaces while keeping runtime resolution strictly scoped to WORKSPACE.
+    priority: P3
+    depends_on: ["31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning"]
+    owner: "Amelia (Dev) / Marc (PM)"
+    status: open
+    epic: epic-31
+    story_ref: "31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning"
+    ad_ref: "D2, R2"
+    description: >
+      Deferred explicitly in Epic 31 Grill Decisions (D2/R2). Epic 31 enforces single-truth WORKSPACE-only pack
+      activation; automated template propagation for newly provisioned workspaces is tracked under ACTION_ITEM-31.2.

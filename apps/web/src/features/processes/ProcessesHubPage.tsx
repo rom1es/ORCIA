@@ -1,4 +1,5 @@
 import {
+  EntityUnlinkConfirmDialog,
   OrciaAlertBanner,
   OrciaPageHeader,
   OrciaTabStrip,
@@ -11,6 +12,7 @@ import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
+import { useGuardedEntityDelete } from "../shared/useGuardedEntityDelete";
 import { AutonomousRunsSupervisionPanel } from "./AutonomousRunsSupervisionPanel";
 import {
   ProcessCatalogCardGrid,
@@ -55,6 +57,8 @@ export function ProcessesHubPage() {
     readInitialTabFromQuery(),
   );
 
+  const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
+  const guardedDelete = useGuardedEntityDelete();
   const {
     workflows,
     setWorkflows,
@@ -65,6 +69,7 @@ export function ProcessesHubPage() {
     hubErrorBanner,
     vsmSummary,
     handleLaunchWorkflow,
+    handleDeleteWorkflow,
   } = useProcessesHubData({
     activeScopeId,
     activeWorkspaceId,
@@ -157,11 +162,15 @@ export function ProcessesHubPage() {
             modesCopy={modesCopy}
             isFr={isFr}
             launchingWorkflowId={launchingWorkflowId}
+            readOnlyObserver={readOnlyObserver}
             onChangeFilter={setFilter}
             onExecuteWorkflow={(wfId) => {
               void handleLaunchWorkflow(wfId);
             }}
             onOpenStudio={(wfId) => navigateToRoute(`/processes/studio/${wfId}`)}
+            onDeleteWorkflow={(wfId) => {
+              void handleDeleteWorkflow(wfId, false, guardedDelete.interceptDeleteError);
+            }}
           />
         </div>
       ) : null}
@@ -211,6 +220,17 @@ export function ProcessesHubPage() {
             ...prev.filter((p) => p.id !== createdV2.id),
           ]);
         }}
+      />
+
+      <EntityUnlinkConfirmDialog
+        open={guardedDelete.pendingTarget !== null}
+        entityLabel={guardedDelete.pendingTarget?.entityLabel ?? ""}
+        draftPacks={guardedDelete.pendingTarget?.draftPacks ?? []}
+        isDeleting={guardedDelete.isConfirming}
+        errorMessage={guardedDelete.dialogError}
+        labels={dictionary.packsUi.unlinkDialog}
+        onCancel={guardedDelete.cancelUnlink}
+        onConfirmUnlinkAndDelete={guardedDelete.confirmUnlink}
       />
     </section>
   );

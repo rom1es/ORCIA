@@ -1,4 +1,5 @@
 import type { DeclarativePackSummaryResponse } from "@orcia/api-client";
+import { StatusBadge } from "@orcia/ui";
 import React from "react";
 import { formatI18nTemplate, useI18n } from "../../../i18n";
 import {
@@ -11,12 +12,21 @@ import {
 export interface PackCardItemProps {
   readonly pack: DeclarativePackSummaryResponse;
   readonly isFr: boolean;
+  readonly readOnlyObserver?: boolean;
   readonly onExportZip: (packId: string) => void;
+  readonly onUninstall?: (bundleId: string, slug: string) => void;
 }
 
-export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
+export function PackCardItem({
+  pack,
+  isFr,
+  readOnlyObserver = false,
+  onExportZip,
+  onUninstall,
+}: PackCardItemProps) {
   const { dictionary } = useI18n();
   const packsCopy = dictionary.featureAdminCatalogSettings.packsRegistry;
+  const packActionsCopy = dictionary.packsUi.actions;
   const counters = [
     {
       key: "agents",
@@ -63,7 +73,17 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
         }}
       >
         <div>
-          <h3 style={{ margin: 0, fontSize: "16px" }}>{pack.name}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 style={{ margin: 0, fontSize: "16px" }}>{pack.name}</h3>
+            <StatusBadge
+              label={
+                pack.bundle_kind === "CUSTOM"
+                  ? packActionsCopy.customOriginBadge
+                  : packActionsCopy.systemOriginBadge
+              }
+              tone="neutral"
+            />
+          </div>
           <div
             style={{
               fontSize: "12px",
@@ -187,14 +207,27 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
           )}{" "}
           : {readableAgents.join(", ")}
         </div>
-        <button
-          type="button"
-          data-testid={`export-pack-${pack.slug}-zip-btn`}
-          onClick={() => onExportZip(pack.id)}
-          className="orcia-ds-btn-secondary"
-        >
-          {formatI18nTemplate(packsCopy.exportPackTemplate, { name: pack.name })}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onUninstall && pack.bundle_kind !== "SYSTEM" ? (
+            <button
+              type="button"
+              data-testid={`uninstall-pack-${pack.slug}-btn`}
+              disabled={readOnlyObserver}
+              onClick={() => onUninstall(pack.bundle_id || pack.id, pack.slug)}
+              className="orcia-ds-btn orcia-ds-btn-danger orcia-ds-btn-sm"
+            >
+              {packActionsCopy.uninstallPackBtn}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            data-testid={`export-pack-${pack.slug}-zip-btn`}
+            onClick={() => onExportZip(pack.id)}
+            className="orcia-ds-btn-secondary"
+          >
+            {formatI18nTemplate(packsCopy.exportPackTemplate, { name: pack.name })}
+          </button>
+        </div>
       </div>
     </article>
   );

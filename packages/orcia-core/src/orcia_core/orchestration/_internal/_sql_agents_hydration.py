@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from typing import cast, get_args
 
+from orcia_core.domain.namespacing import (
+    ResolutionTier,
+    format_agent_mention,
+    format_skill_command,
+)
+from orcia_core.orchestration._agents_namespacing import infer_record_pack_slug_and_tier
 from orcia_core.orchestration.agents_and_skills_models import (
     DEFAULT_ALLOWED_RAG_SOURCES,
     DEFAULT_GUARDRAILS,
@@ -66,6 +72,9 @@ def hydrate_skill_record(
     source_pack_key: str | None,
     enabled_in_workspace: bool,
     column_workspace_id: str | None,
+    pack_slug: str | None = None,
+    bundle_kind: str | None = None,
+    resolution_tier: ResolutionTier | None = None,
 ) -> ManagedSkillRecord:
     raw_params = meta.get("input_parameters")
     params = (
@@ -78,6 +87,19 @@ def hydrate_skill_record(
     from orcia_core.orchestration._agents_skills_locales import get_agents_skills_copy
 
     default_fmt = get_agents_skills_copy().default_output_format
+    resolved_pack, resolved_tier = infer_record_pack_slug_and_tier(
+        entity_id=resource_id,
+        slug=slug,
+        uri=uri,
+        visibility_scope=vis_scope,
+        source_pack_key=source_pack_key,
+        explicit_pack_slug=pack_slug or (str(meta["pack_slug"]) if meta.get("pack_slug") else None),
+        explicit_tier=resolution_tier,
+        bundle_kind=bundle_kind,
+    )
+    qualified = format_skill_command(
+        slug, pack_slug=resolved_pack, workspace_scoped=(resolved_pack is None)
+    )
     return ManagedSkillRecord(
         skill_id=resource_id,
         slug=slug,
@@ -97,6 +119,9 @@ def hydrate_skill_record(
         human_authored_required=bool(meta.get("human_authored_required", False)),
         owner_workspace_id=str(raw_ws).strip() if raw_ws else None,
         owner_user_id=str(raw_user).strip() if raw_user else None,
+        pack_slug=resolved_pack,
+        qualified_ref=qualified,
+        resolution_tier=resolved_tier,
     )
 
 
@@ -114,6 +139,9 @@ def hydrate_agent_record(
     source_pack_key: str | None,
     enabled_in_workspace: bool,
     column_workspace_id: str | None,
+    pack_slug: str | None = None,
+    bundle_kind: str | None = None,
+    resolution_tier: ResolutionTier | None = None,
 ) -> ManagedAgentRecord:
     raw_skills = meta.get("skill_ids") or []
     skill_ids = (
@@ -175,6 +203,19 @@ def hydrate_agent_record(
         if raw_lifecycle in ("DRAFT", "ACTIVE")
         else "DRAFT"
     )
+    resolved_pack, resolved_tier = infer_record_pack_slug_and_tier(
+        entity_id=resource_id,
+        slug=slug,
+        uri=uri,
+        visibility_scope=vis_scope,
+        source_pack_key=source_pack_key,
+        explicit_pack_slug=pack_slug or (str(meta["pack_slug"]) if meta.get("pack_slug") else None),
+        explicit_tier=resolution_tier,
+        bundle_kind=bundle_kind,
+    )
+    qualified = format_agent_mention(
+        slug, pack_slug=resolved_pack, workspace_scoped=(resolved_pack is None)
+    )
     return ManagedAgentRecord(
         agent_id=resource_id,
         slug=slug,
@@ -214,4 +255,7 @@ def hydrate_agent_record(
         test_bench_status=test_bench_status,
         owner_workspace_id=str(raw_ws).strip() if raw_ws else None,
         owner_user_id=str(raw_user).strip() if raw_user else None,
+        pack_slug=resolved_pack,
+        qualified_ref=qualified,
+        resolution_tier=resolved_tier,
     )

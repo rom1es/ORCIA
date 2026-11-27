@@ -2,6 +2,7 @@ import {
   AgentExecutionTrace,
   AgentsAndSkillsManagerView,
   CatalogExplorerPanel,
+  EntityUnlinkConfirmDialog,
   OrciaAlertBanner,
   RemoteServiceTestBenchAndMcpExposureView,
   SourceLineInspectorDrawer,
@@ -18,6 +19,7 @@ import {
   normalizeAlertFeedback,
 } from "../shared/alertFeedback";
 import { useReflexiveExecutionController } from "../shared/useReflexiveExecutionController";
+import { useGuardedEntityDelete } from "../shared/useGuardedEntityDelete";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
 import {
   AGENTS_AND_SKILLS_STORAGE_KEY,
@@ -26,7 +28,7 @@ import {
   readCachedAgentsAndSkills,
   resetCachedAgentsAndSkillsForTest,
   writeAssistantPrefillPrompt,
-} from "./packAgentsCatalog";
+} from "../../components/agentsAndSkillsBridgeStore";
 import { useCatalogRemoteTestBench } from "./useCatalogRemoteTestBench";
 import { useManagedAgentsAndSkills } from "./useManagedAgentsAndSkills";
 
@@ -88,12 +90,15 @@ export function CatalogFeaturePanel({
     onFeedback: setCatalogActionFeedback,
   });
 
+  const guardedDelete = useGuardedEntityDelete();
+
   const managed = useManagedAgentsAndSkills(
     packs,
     setCatalogActionFeedback,
     locale,
     catCopy,
     setAgentModalError,
+    guardedDelete.interceptDeleteError,
   );
 
   const handleExecuteAgentWithTrace = async (agentId: string, prompt: string): Promise<boolean> => {
@@ -269,6 +274,17 @@ export function CatalogFeaturePanel({
         copiedFeedback={inspector.inspectorState.copiedFeedback}
         labels={dictionary.sourceLineInspector}
         onCopySlice={inspector.copyCurrentSlice}
+      />
+
+      <EntityUnlinkConfirmDialog
+        open={guardedDelete.pendingTarget !== null}
+        entityLabel={guardedDelete.pendingTarget?.entityLabel ?? ""}
+        draftPacks={guardedDelete.pendingTarget?.draftPacks ?? []}
+        isDeleting={guardedDelete.isConfirming}
+        errorMessage={guardedDelete.dialogError}
+        labels={dictionary.packsUi.unlinkDialog}
+        onCancel={guardedDelete.cancelUnlink}
+        onConfirmUnlinkAndDelete={guardedDelete.confirmUnlink}
       />
     </div>
   );

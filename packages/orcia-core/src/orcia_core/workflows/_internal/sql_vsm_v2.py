@@ -77,7 +77,8 @@ class SqlVsmDefinitionsV2Store:
             return specs
 
         delete_slug_stmt = sa.text(
-            "DELETE FROM vsm_definitions_v2 WHERE slug = :slug AND vsm_id <> :vsm_id"
+            "DELETE FROM vsm_definitions_v2 "
+            "WHERE slug = :slug AND vsm_id <> :vsm_id AND pack_bundle_id IS NULL"
         )
         upsert_stmt = sa.text(
             """
@@ -99,7 +100,7 @@ class SqlVsmDefinitionsV2Store:
                 CAST(:spec_jsonb AS JSONB),
                 NOW()
             )
-            ON CONFLICT (vsm_id) DO UPDATE SET
+            ON CONFLICT (vsm_id) WHERE pack_bundle_id IS NULL DO UPDATE SET
                 slug = EXCLUDED.slug,
                 pack_id = EXCLUDED.pack_id,
                 title = EXCLUDED.title,

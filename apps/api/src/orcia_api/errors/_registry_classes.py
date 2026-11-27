@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from orcia_api.errors._registry_extra_classes import PACK_DOMAIN_ERROR_CLASSES
 from orcia_core.agents.errors import (
     ReflexiveInvalidStateError,
     ReflexiveSessionExpiredError,
@@ -187,6 +188,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     HelpArticleValidationError,
     InvalidMcpTokenConfigurationError,
     PackBuilderValidationError,
+    *PACK_DOMAIN_ERROR_CLASSES,
 )
 
 __all__ = [

@@ -41,13 +41,8 @@ from _first_boot_reset_guards import (  # noqa: E402
     quote_sql_ident,
 )
 
-from orcia_core.bootstrap import upsert_declarative_pack_bundles_sql  # noqa: E402
 from orcia_core.config import resolve_database_url  # noqa: E402
-from orcia_core.packs.loader import (  # noqa: E402
-    DeclarativePackLoader,
-    resolve_default_packs_root,
-)
-from orcia_core.workflows import upsert_vsm_definitions_v2_sql  # noqa: E402
+from orcia_core.packs import seed_system_packs_on_engine  # noqa: E402
 from orcia_kernel.ids import new_uuid7_str  # noqa: E402
 
 _assert_no_append_only_restrict_refs = assert_no_append_only_restrict_refs
@@ -175,6 +170,27 @@ async def reset_database_to_first_boot(
                 deleted_total += int(res.rowcount or 0)
                 cleared_tables += 1
 
+            if "declarative_pack_bundles" in existing_tables:
+                has_bundle_kind = bool(
+                    (
+                        await conn.execute(
+                            sa.text(
+                                "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
+                                "WHERE table_schema = 'public' "
+                                "AND table_name = 'declarative_pack_bundles' "
+                                "AND column_name = 'bundle_kind')"
+                            )
+                        )
+                    ).scalar()
+                )
+                if has_bundle_kind:
+                    res = await conn.execute(
+                        sa.text(
+                            "DELETE FROM declarative_pack_bundles WHERE bundle_kind <> 'SYSTEM'"
+                        )
+                    )
+                    deleted_total += int(res.rowcount or 0)
+
             if dbos_tables:
                 qualified_dbos = ", ".join(quote_sql_ident("dbos", t) for t in dbos_tables)
                 await conn.execute(
@@ -208,10 +224,7 @@ async def reset_database_to_first_boot(
 
     if committed:
         if "declarative_pack_bundles" in existing_tables:
-            pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
-            await upsert_declarative_pack_bundles_sql(engine, pack_bundles)
-            if "vsm_definitions_v2" in existing_tables:
-                await upsert_vsm_definitions_v2_sql(engine, pack_bundles)
+            await seed_system_packs_on_engine(engine)
         _flush_redis_if_configured()
 
     return FirstBootResetReport(

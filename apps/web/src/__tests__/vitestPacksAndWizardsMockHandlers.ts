@@ -1,4 +1,9 @@
 import { useAuthSessionStore } from "../stores/authSessionStore";
+import {
+  handleVitestEpic31PackRoute,
+  listMockImportedPacks,
+  resetVitestEpic31PackState,
+} from "./setup/vitestEpic31PackHandlers";
 
 export interface MockWizardSession {
   id: string;
@@ -103,6 +108,7 @@ let wizardSeq = 0;
 export function resetVitestPacksAndWizardsMockState(): void {
   wizardSessions = [];
   wizardSeq = 0;
+  resetVitestEpic31PackState();
 }
 
 export function seedVitestWizardSessions(sessions: readonly MockWizardSession[]): void {
@@ -201,6 +207,7 @@ export function handleVitestPacksAndWizardsRoute(params: {
   readonly method: string;
   readonly parsedUrl: URL;
   readonly body: Record<string, unknown>;
+  readonly rawInit?: RequestInit;
   readonly reqHeaders: Headers;
   readonly jsonResponse: (payload: unknown, status?: number) => Response;
   readonly problemResponse: (
@@ -211,10 +218,21 @@ export function handleVitestPacksAndWizardsRoute(params: {
     instance: string,
   ) => Response;
 }): Response | null {
-  const { path, method, parsedUrl, body, reqHeaders, jsonResponse, problemResponse } = params;
+  const { path, method, parsedUrl, body, rawInit, reqHeaders, jsonResponse, problemResponse } = params;
+
+  const epic31Resp = handleVitestEpic31PackRoute({
+    path,
+    method,
+    parsedUrl,
+    body,
+    rawInit,
+    reqHeaders,
+    problemResponse,
+  });
+  if (epic31Resp) return epic31Resp;
 
   if (path === "/api/v1/packs" && method === "GET") {
-    return jsonResponse({ packs: MOCK_DECLARATIVE_PACKS });
+    return jsonResponse({ packs: [...MOCK_DECLARATIVE_PACKS, ...listMockImportedPacks()] });
   }
 
   if (path === "/api/v1/packs/health" && method === "GET") {

@@ -52,3 +52,15 @@ class ProblemDetails(BaseModel):
         default=None,
         description="Optional progress percentage (0-100) for operations like RAG reindexing.",
     )
+    draft_packs: list[dict[str, str]] | None = Field(
+        default=None,
+        description="Referencing draft pack bundles blocking delete (`ON DELETE RESTRICT`).",
+    )
+    missing_dependencies: list[dict[str, str]] | None = Field(
+        default=None,
+        description="Missing or non-ACTIVE dependencies detected during pack closure validation.",
+    )
+    leak_findings: list[dict[str, str]] | None = Field(
+        default=None,
+        description="Sanitized PII, tenant infra, or secret leak findings blocking pack export.",
+    )

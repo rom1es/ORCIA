@@ -17,6 +17,7 @@ import importlib.util
 import os
 import shutil
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -39,13 +40,10 @@ from orcia_kernel.ids import new_uuid7_str
 os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOCK_BASE_DIR = REPO_ROOT / ".pytest_cache" / "tc_3_2f"
 
 
 def _prepare_sock_dir(name: str) -> Path:
-    unique = f"{name}_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    target = SOCK_BASE_DIR / unique
-    target.mkdir(parents=True, exist_ok=True)
+    target = Path(tempfile.mkdtemp(prefix=f"orcia_3_2f_{name}_"))
     target.chmod(0o777)
     return target
 

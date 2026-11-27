@@ -1,3 +1,17 @@
+---
+name: CRL Étude d'architecture
+description: Construit avec l'architecte le dossier d'étude d'architecture (DE) en 14 points avec diagrammes Mermaid.
+x-orcia:
+  posture: PRODUCER
+  human_partner_role: ARCHITECT
+  llm_model_tier: complex
+  skill_refs:
+    - diagrammes-mermaid
+  connector_slots:
+    - confluence-kb
+    - git-repo
+  status: active
+---
 # CRL Étude d’architecture
 
 **Plateforme :** GitHub Copilot

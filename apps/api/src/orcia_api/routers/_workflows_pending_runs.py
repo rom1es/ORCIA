@@ -1,4 +1,4 @@
-"""PG18 persistence & ScopeAccessGuard handlers for `workflows` v2 runs (`Story 30.3`)."""
+"""PG18 persistence & ScopeAccessGuard handlers for `workflows` v2 runs (`Story 30.3`, `31.4`)."""
 
 from __future__ import annotations
 
@@ -6,10 +6,22 @@ from typing import Literal
 
 from fastapi import HTTPException, Request
 
+from orcia_api.dependencies import get_auth_service
 from orcia_api.dependencies._process_llm_bridge import enforce_live_process_prerequisites
 from orcia_api.routers._agents_lifecycle_guards import enforce_active_agents_for_workflow
 from orcia_api.routers._finops_scope_guards import resolve_finops_read_scope
 from orcia_api.routers._workflows_helpers import enforce_not_observer, load_workflows_store
+from orcia_api.routers._workflows_pack_lock_helpers import (
+    enforce_and_snapshot_workspace_packs,
+    pin_and_sync_v2_run_lock,
+    sync_v2_run_status_if_pg,
+)
+from orcia_api.routers._workflows_run_state_helpers import (
+    extract_workflow_actor_slug,
+    load_or_rehydrate_run_state,
+    persist_workflow_v2_run_state,
+    remember_run_workspace,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.process_studio_v2 import (
     HitlSignalRequest,
@@ -27,8 +39,8 @@ from orcia_core.audit_finops.finops_models import ScopeType
 from orcia_core.kernel.errors import resolve_locale
 from orcia_core.kernel.ids import new_uuid7_str
 from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.packs import sanitize_workflow_inputs_for_slots
 from orcia_core.workflows import SqlWorkflowDefinitionsV2Store, SqlWorkflowV2RunsStore
-from orcia_core.workflows.schemas_v2 import WorkflowDefinitionV2
 
 
 def resolve_workflow_run_workspace_id(
@@ -45,16 +57,6 @@ def resolve_workflow_run_workspace_id(
     if not cleaned or cleaned.lower() == "scope-global":
         return None
     return cleaned
-
-
-def extract_workflow_actor_slug(workflow: WorkflowDefinitionV2) -> str:
-    """Derive a clean actor slug from `WorkflowDefinitionV2.global_system_prompt_or_ref`."""
-    raw_ref = (workflow.global_system_prompt_or_ref or workflow.slug).strip()
-    without_fragment = raw_ref.split("#", 1)[0]
-    tail = without_fragment.rsplit("/", 1)[-1]
-    if tail.endswith(".md"):
-        tail = tail[:-3]
-    return tail or workflow.slug
 
 
 async def list_pending_process_runs_handler(
@@ -103,70 +105,6 @@ async def list_pending_process_runs_handler(
     )
 
 
-async def persist_workflow_v2_run_state(
-    sql_runs_store: SqlWorkflowV2RunsStore,
-    *,
-    run_state: BoundedWorkflowRunState,
-    workflow: WorkflowDefinitionV2,
-    workspace_id: str | None,
-) -> None:
-    """Upsert `BoundedWorkflowRunState` into PostgreSQL 18 `workflow_v2_runs`."""
-    state_payload = run_state.model_dump(mode="json")
-    if workspace_id:
-        state_payload["workspace_id"] = workspace_id
-    await sql_runs_store.upsert_run(
-        run_id=run_state.run_id,
-        workspace_id=workspace_id,
-        workflow_id=run_state.workflow_id,
-        workflow_slug=run_state.workflow_slug,
-        workflow_title=workflow.title,
-        actor_slug=extract_workflow_actor_slug(workflow),
-        status=run_state.status,
-        reflexive_execution_id=run_state.reflexive_execution_id,
-        state_payload=state_payload,
-    )
-
-
-def _remember_run_workspace(
-    runs_store: dict[str, BoundedWorkflowRunState],
-    run_id: str,
-    workspace_id: str | None,
-) -> None:
-    ws_map = getattr(runs_store, "workspaces", None)
-    if isinstance(ws_map, dict):
-        ws_map[run_id] = workspace_id
-
-
-async def load_or_rehydrate_run_state(
-    runs_store: dict[str, BoundedWorkflowRunState],
-    sql_runs_store: SqlWorkflowV2RunsStore,
-    run_id: str,
-) -> tuple[BoundedWorkflowRunState | None, str | None]:
-    """Load run state from RAM cache or cold PG18 `workflow_v2_runs` (`F5` survival)."""
-    cached = runs_store.get(run_id)
-    if cached is not None:
-        ws_map = getattr(runs_store, "workspaces", None)
-        if isinstance(ws_map, dict) and run_id in ws_map:
-            return cached, ws_map[run_id]
-        raw_fallback = await sql_runs_store.get_run(run_id)
-        if raw_fallback is not None:
-            ws_raw = raw_fallback.get("workspace_id")
-            ws_id = str(ws_raw).strip() if isinstance(ws_raw, str) and ws_raw.strip() else None
-            _remember_run_workspace(runs_store, run_id, ws_id)
-            return cached, ws_id
-        return cached, None
-    raw = await sql_runs_store.get_run(run_id)
-    if raw is None:
-        return None, None
-    ws_raw = raw.get("workspace_id")
-    ws_id = str(ws_raw).strip() if isinstance(ws_raw, str) and ws_raw.strip() else None
-    clean_payload = {k: v for k, v in raw.items() if k != "workspace_id"}
-    restored = BoundedWorkflowRunState.model_validate(clean_payload)
-    runs_store[run_id] = restored
-    _remember_run_workspace(runs_store, run_id, ws_id)
-    return restored, ws_id
-
-
 async def execute_get_workflow_v2_run_handler(
     run_id: str,
     request: Request,
@@ -196,11 +134,16 @@ async def execute_start_workflow_v2_run_handler(
     *,
     persona_key: str | None = None,
 ) -> WorkflowV2RunResponse:
-    """Validate prerequisites, dispatch dual-mode run, and persist in PG18."""
-    resolved_ws_id = resolve_workflow_run_workspace_id(payload.workspace_id, request)
-    actor = enforce_not_observer(request, persona_key=persona_key, workspace_id=resolved_ws_id)
-    if resolved_ws_id is not None:
-        await resolve_finops_read_scope(request, actor, "WORKSPACE", resolved_ws_id)
+    """Validate prerequisites + pack slots, dispatch run, and pin `run_lock_manifests`."""
+    raw_ws_id = resolve_workflow_run_workspace_id(payload.workspace_id, request)
+    actor = enforce_not_observer(request, persona_key=persona_key, workspace_id=None)
+    resolved_ws_id = raw_ws_id
+    if raw_ws_id is not None:
+        await resolve_finops_read_scope(request, actor, "WORKSPACE", raw_ws_id)
+        ws_obj = get_auth_service(request).evaluator.get_workspace(raw_ws_id)
+        if ws_obj is not None:
+            resolved_ws_id = ws_obj.id
+        enforce_not_observer(request, persona_key=persona_key, workspace_id=resolved_ws_id)
 
     store = await load_workflows_store(request, sql_store)
     wf = store.get(workflow_id)
@@ -208,12 +151,16 @@ async def execute_start_workflow_v2_run_handler(
         raise HTTPException(status_code=404, detail=f"Workflow '{workflow_id}' not found")
 
     await enforce_active_agents_for_workflow(request, wf, instance=str(request.url.path))
+    pinned_packs = await enforce_and_snapshot_workspace_packs(
+        request, workspace_id=resolved_ws_id, workflow=wf
+    )
+    effective_inputs = sanitize_workflow_inputs_for_slots(payload.inputs, pinned_packs)
     merged_resources = await enforce_live_process_prerequisites(
         request,
         user=actor,
         workspace_id=resolved_ws_id,
         workflow=wf,
-        inputs=payload.inputs,
+        inputs=effective_inputs,
         explicit_resources=payload.initial_resources,
     )
 
@@ -225,7 +172,7 @@ async def execute_start_workflow_v2_run_handler(
     unified = await dispatcher.dispatch(
         wf,
         run_id=run_id,
-        inputs=payload.inputs,
+        inputs=effective_inputs,
         iteration=payload.iteration,
         reentry_mode=reentry,
         correction_remarks=payload.correction_remarks,
@@ -237,13 +184,39 @@ async def execute_start_workflow_v2_run_handler(
     )
     run_state = BoundedWorkflowRunState.from_unified_result(unified)
     runs_store[run_id] = run_state
-    _remember_run_workspace(runs_store, run_id, resolved_ws_id)
-    await persist_workflow_v2_run_state(
-        sql_runs_store,
+    remember_run_workspace(runs_store, run_id, resolved_ws_id)
+    v2_run_payload = {
+        "workflow_title": wf.title,
+        "actor_slug": extract_workflow_actor_slug(wf),
+        "reflexive_execution_id": run_state.reflexive_execution_id,
+        "state": run_state.model_dump(mode="json"),
+    }
+    atomic_pg_persisted = await pin_and_sync_v2_run_lock(
+        request,
         run_state=run_state,
         workflow=wf,
         workspace_id=resolved_ws_id,
+        actor_user_id=actor.id,
+        pinned_packs=pinned_packs,
+        v2_run_payload=v2_run_payload,
     )
+    if atomic_pg_persisted:
+        if not getattr(sql_runs_store, "_strict_sql", False):
+            sql_runs_store._memory_fallback[run_id] = {
+                "run_id": run_id,
+                "workspace_id": resolved_ws_id,
+                "workflow_id": wf.id,
+                "workflow_slug": wf.slug,
+                **v2_run_payload,
+                "status": run_state.status,
+            }
+    else:
+        await persist_workflow_v2_run_state(
+            sql_runs_store,
+            run_state=run_state,
+            workflow=wf,
+            workspace_id=resolved_ws_id,
+        )
     return WorkflowV2RunResponse(run=run_state)
 
 
@@ -273,13 +246,14 @@ async def execute_hitl_signal_handler(
 
     updated = apply_hitl_signal_to_run(wf, run_state, payload)
     runs_store[run_id] = updated
-    _remember_run_workspace(runs_store, run_id, stored_ws_id)
+    remember_run_workspace(runs_store, run_id, stored_ws_id)
     await persist_workflow_v2_run_state(
         sql_runs_store,
         run_state=updated,
         workflow=wf,
         workspace_id=stored_ws_id,
     )
+    await sync_v2_run_status_if_pg(request, run_id=run_id, status=updated.status)
     return WorkflowV2RunResponse(run=updated)
 
 

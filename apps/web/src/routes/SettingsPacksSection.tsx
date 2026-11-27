@@ -12,11 +12,10 @@ import type {
   ConfiguredPackItem,
 } from "../components/platformSetupStore";
 import { DICTIONARIES, resolveLocaleForFlag } from "../i18n";
+import { DeclarativePacksRegistrySection } from "../features/settings/packs/DeclarativePacksRegistrySection";
+import { usePacksRegistryHealthchecks } from "../features/settings/packs/usePacksRegistryHealthchecks";
 import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
 import { SettingsPacksCatalogCard } from "./SettingsPacksCatalogCard";
-import { BUILTIN_INSTALLED_BUSINESS_PACKS } from "./settingsPacksPresets";
-
-export { BUILTIN_INSTALLED_BUSINESS_PACKS };
 
 export interface SettingsPacksSectionProps {
   readonly isFr: boolean;
@@ -48,9 +47,10 @@ export function SettingsPacksSection({
   const copy = DICTIONARIES[locale].routesAndWizards.settingsPacks;
   const [installedPacks, setInstalledPacks] = useState<
     readonly InstalledBusinessPackItemResponse[]
-  >(BUILTIN_INSTALLED_BUSINESS_PACKS);
+  >([]);
   const [selectedScopePath, setSelectedScopePath] = useState<string>("GLOBAL");
   const [packsLoadError, setPacksLoadError] = useState<string | null>(null);
+  const registry = usePacksRegistryHealthchecks(locale);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,6 +177,21 @@ export function SettingsPacksSection({
           {copy.emptyState}
         </p>
       )}
+
+      <DeclarativePacksRegistrySection
+        packs={registry.packs}
+        selectedWorkspaceId={registry.selectedWorkspaceId}
+        onSelectedWorkspaceChange={registry.setSelectedWorkspaceId}
+        onRefreshPacks={registry.reloadPacksFromServer}
+        onExportPackZip={(packId) => {
+          registry.setSelectedPackId(packId);
+          void registry.handleExportPackBundleZip(packId);
+        }}
+        onStatusMessage={registry.setStatusMessage}
+        onErrorMessage={registry.setErrorMessage}
+        statusMessage={registry.statusMessage}
+        errorMessage={registry.errorMessage}
+      />
     </section>
   );
 }

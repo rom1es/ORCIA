@@ -37,6 +37,9 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
   const visibilityScope: UiAgentSkillVisibilityScope =
     skill.visibilityScope ?? "TEAM";
   const isPack = visibilityScope === "PACK";
+  const originPackLabel = skill.sourcePackKey ?? skill.packSlug ?? "";
+  const displayedCommand =
+    skill.isColliding && skill.qualifiedRef ? skill.qualifiedRef : skill.commandHandle;
   const visibilityBadgeContent =
     visibilityScope === "PRIVATE" ? (
       <>
@@ -44,8 +47,8 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
       </>
     ) : visibilityScope === "PACK" ? (
       <>
-        <OrciaIcon name="spaces" /> {studio.visibilityPackPrefix} (
-        {skill.sourcePackKey ?? "orcia-pack-sdlc"})
+        <OrciaIcon name="spaces" /> {studio.visibilityPackPrefix}
+        {originPackLabel ? ` (${originPackLabel})` : ""}
       </>
     ) : (
       <>
@@ -55,7 +58,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
 
   const handleCopyCommand = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(skill.commandHandle).catch((err: unknown) => {
+      void navigator.clipboard.writeText(displayedCommand).catch((err: unknown) => {
         if (typeof console !== "undefined") {
           console.debug(
             "[orcia:clipboard]",
@@ -89,7 +92,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
             data-testid={`skill-command-handle-${skill.skillId}`}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 font-mono text-[11px]"
           >
-            {skill.commandHandle}
+            {displayedCommand}
           </code>
           <button
             type="button"

@@ -26,7 +26,6 @@ from orcia_core.orchestration import (
 from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
     RemoteServiceTestBenchAndGovernedMcpService,
 )
-from orcia_core.workflows import upsert_vsm_definitions_v2_sql
 
 
 def init_pg_engine_and_uow(app: FastAPI) -> None:
@@ -117,6 +116,8 @@ def attach_pg18_repositories(app: FastAPI) -> None:
         "permission_broker_service",
         "assistant_folders_and_sharing_service",
         "assistant_thread_messages_repository",
+        "pack_bundle_v2_repository",
+        "pack_import_service",
     ):
         svc_inst = getattr(app.state, attr_name, None)
         if svc_inst is not None and getattr(svc_inst, "_engine", None) is None:
@@ -127,20 +128,20 @@ def attach_pg18_repositories(app: FastAPI) -> None:
 
 
 async def startup_declarative_packs_and_dbos(app: FastAPI) -> None:
-    """Sync declarative packs, contextual help seeds, and DBOS datasource on startup."""
-    from orcia_core.bootstrap import upsert_declarative_pack_bundles_sql
+    """Seed Day-0 SYSTEM packs via `PackImportService`, help seeds, and DBOS on startup."""
     from orcia_core.config import resolve_database_url
+    from orcia_core.packs import seed_system_packs_on_engine
 
     db_engine = getattr(app.state, "db_engine", None)
     if db_engine is None:
         return
     try:
-        from orcia_core.packs.loader import DeclarativePackLoader, resolve_default_packs_root
-
-        pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
-        app.state.declarative_pack_bundles = pack_bundles
-        await upsert_declarative_pack_bundles_sql(db_engine, pack_bundles)
-        await upsert_vsm_definitions_v2_sql(db_engine, pack_bundles)
+        outcomes = await seed_system_packs_on_engine(
+            db_engine,
+            cas_storage=getattr(app.state, "pack_cas_storage", None),
+            import_service=getattr(app.state, "pack_import_service", None),
+        )
+        app.state.declarative_pack_seed_outcomes = outcomes
         help_svc = getattr(app.state, "contextual_help_service", None)
         if help_svc is not None and hasattr(help_svc, "ensure_seeded_in_postgres18_async"):
             await help_svc.ensure_seeded_in_postgres18_async()

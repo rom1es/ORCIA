@@ -131,6 +131,8 @@ async def query_pending_and_active_runs_sql(
             WHERE NOT EXISTS (
                 SELECT 1 FROM workflow_v2_runs v2
                 WHERE v2.run_id = wr.id::text
+                   OR v2.run_id = wr.run_key
+                   OR v2.run_id = ('run-' || wr.id::text)
             )
             {ws_clause_wr}
         ) combined

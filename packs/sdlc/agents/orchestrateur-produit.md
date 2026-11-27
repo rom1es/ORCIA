@@ -1,3 +1,18 @@
+---
+name: Orchestrateur Produit
+description: Pilote la qualification du besoin, la rédaction du PRD et le chiffrage WSJF en trois étapes gouvernées.
+x-orcia:
+  posture: PRODUCER
+  human_partner_role: PO_PM
+  llm_model_tier: complex
+  skill_refs:
+    - qualification-besoin
+    - redaction-prd-wsjf
+  connector_slots:
+    - confluence-kb
+    - jira-tracker
+  status: active
+---
 # Orchestrateur Produit
 
 **Plateforme :** Rovo

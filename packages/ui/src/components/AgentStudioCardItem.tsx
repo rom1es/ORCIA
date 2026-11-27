@@ -47,9 +47,12 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   const isDraft = lifecycleStatus === "DRAFT";
   const attachedSkills = skills.filter((sk) => agent.skillIds.includes(sk.skillId));
 
+  const displayedHandle =
+    agent.isColliding && agent.qualifiedRef ? agent.qualifiedRef : agent.handle;
+
   const handleCopyHandle = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(agent.handle).catch((err: unknown) => {
+      void navigator.clipboard.writeText(displayedHandle).catch((err: unknown) => {
         if (typeof console !== "undefined") {
           console.debug(
             "[orcia:clipboard]",

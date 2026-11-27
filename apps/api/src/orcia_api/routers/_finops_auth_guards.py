@@ -47,6 +47,7 @@ def enforce_observer_headers_guard(request: Request, user: UserIdentity) -> None
         or active_hat in ("READ_ONLY_OBSERVER", "OBSERVER")
         or observer_hdr in ("1", "true", "yes")
         or user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER")
+        or any(r.strip().upper() in ("OBSERVER", "READ_ONLY_OBSERVER") for r in user.roles)
     ):
         raise ObserverModeReadOnlyError(instance=path)
 

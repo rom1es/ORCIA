@@ -8,26 +8,52 @@ from fastapi import Request
 
 from orcia_api.dependencies import get_agents_and_skills_service
 from orcia_api.routers._agents_and_skills_helpers import sync_from_postgres18_if_enabled
+from orcia_core.domain.namespacing import parse_qualified_entity_ref
+from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration import ManagedAgentRecord
+from orcia_core.orchestration._agents_namespacing import resolve_agent_reference
 from orcia_core.orchestration.errors import AgentDraftLifecycleBlockedError
 from orcia_core.workflows.schemas_v2 import WorkflowDefinitionV2
+from orcia_kernel.errors import ValidationDomainError
 
-_MENTION_HANDLE_RE = re.compile(r"(?:^|\s)@([a-zA-Z0-9_-]+)")
+logger = get_logger("orcia.api.agents_lifecycle_guards")
+_MENTION_HANDLE_RE = re.compile(r"(?:^|\s)@([a-zA-Z0-9_/-]+(?::[a-zA-Z0-9_.-]+)?)")
 
 
 def _normalize_agent_ref_token(raw_ref: str) -> str:
     cleaned = raw_ref.strip().lower()
     cleaned = cleaned.split("#", 1)[0]
-    if "/" in cleaned:
-        cleaned = cleaned.rsplit("/", 1)[-1]
     if cleaned.endswith(".md"):
         cleaned = cleaned[:-3]
+    if "/" in cleaned and not cleaned.startswith(("orcia://", "pack://")):
+        return cleaned.lstrip("@")
     return cleaned.lstrip("@")
 
 
 def _match_managed_agent(
     agents: tuple[ManagedAgentRecord, ...], raw_ref: str
 ) -> ManagedAgentRecord | None:
+    cleaned = raw_ref.strip()
+    if not cleaned:
+        return None
+    if not cleaned.startswith(("@", "/", "orcia://", "pack://")) and "/" in cleaned:
+        cleaned = f"@{cleaned}"
+    if cleaned.endswith(".md"):
+        cleaned = cleaned[:-3]
+    try:
+        parsed = parse_qualified_entity_ref(cleaned, default_kind="agents")
+    except (ValidationDomainError, ValueError) as exc:
+        logger.warning(
+            "agent_ref_parse_fallback",
+            ref=cleaned,
+            error_type=type(exc).__name__,
+        )
+        parsed = None
+    if parsed is not None and parsed.is_qualified:
+        resolved = resolve_agent_reference(agents, cleaned)
+        if resolved is not None and isinstance(resolved.winner.payload, ManagedAgentRecord):
+            return resolved.winner.payload
+        return None
     token = _normalize_agent_ref_token(raw_ref)
     if not token:
         return None

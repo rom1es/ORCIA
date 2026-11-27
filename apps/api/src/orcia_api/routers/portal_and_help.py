@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Path, Query, Request
 
 from orcia_api.dependencies import (
     get_auth_service,
@@ -16,8 +16,13 @@ from orcia_api.dependencies import (
     get_two_speed_search_service,
 )
 from orcia_api.dependencies._core_providers import get_configured_db_engine
+from orcia_api.routers._entity_delete_rbac import (
+    build_catalog_target_authorizer,
+    prepare_entity_delete_guards,
+)
 from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
+from orcia_api.schemas._pack_composer import GuardedEntityDeleteResponse
 from orcia_api.schemas.catalog import (
     ContextualHelpPublishRequest,
     ContextualHelpResolveResponse,
@@ -30,6 +35,8 @@ from orcia_api.schemas.ontology_and_rag import (
 )
 from orcia_core.catalog.contextual_help import HelpArticleCatalogItem
 from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.orchestration import delete_catalog_item_guarded
+from orcia_core.permissions.errors import ResourceNotFoundError
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag import FederatedSearchCandidate, load_federated_search_candidates_pg18
 
@@ -244,3 +251,48 @@ async def rollback_contextual_help(
     svc = get_contextual_help_service(request)
     restored = await svc.rollback_to_previous_version_async(body.resource_id)
     return _serialize_help_article(restored)
+
+
+@router.delete(
+    "/help/{article_id}",
+    response_model=GuardedEntityDeleteResponse,
+    summary="Delete a standalone HELP_ARTICLE catalog item with anti-hostage draft guard",
+    responses=PROBLEM_RESPONSES,
+)
+async def delete_help_article_endpoint(
+    request: Request,
+    article_id: str = Path(..., min_length=1, max_length=128),
+    unlink_from_draft_packs: bool = Query(default=False),
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> GuardedEntityDeleteResponse:
+    """Delete standalone `HELP_ARTICLE` row with RBAC, immutability & draft-unlink guard."""
+    inst = str(request.url.path)
+    user, auth_svc, trace_id, authorize_draft = await prepare_entity_delete_guards(
+        request, persona_key=persona_key
+    )
+    engine = get_configured_db_engine(request)
+    if engine is None:
+        raise ResourceNotFoundError(
+            detail_override=f"HELP_ARTICLE '{article_id}' not found.",
+            instance=inst,
+        )
+    target_uuid, unlinked = await delete_catalog_item_guarded(
+        engine,
+        article_id,
+        "HELP_ARTICLE",
+        unlink_from_draft_packs=unlink_from_draft_packs,
+        authorize_target_cb=build_catalog_target_authorizer(auth_svc, user, instance=inst),
+        authorize_draft_cb=authorize_draft,
+        raise_if_missing=True,
+        actor_id=user.id,
+        actor_email=user.email,
+        trace_id=trace_id,
+        instance=inst,
+    )
+    return GuardedEntityDeleteResponse(
+        entity_type="HELP_ARTICLE",
+        deleted_id=article_id,
+        deleted_uuid=target_uuid,
+        unlinked_draft_packs=unlinked,
+        trace_id=trace_id,
+    )

@@ -10,6 +10,7 @@ import { handleAssistantAndInboxRoute } from "./assistantAndInboxMockHandlers";
 import { handleAuthAndBootstrapRoute } from "./authAndBootstrapMockHandlers";
 import { handleAutonomyTriggersAndWorkflowsV2Route } from "./autonomyTriggersAndWorkflowsV2Handlers";
 import { handleFinopsAndGatesRoute } from "./finopsAndGatesMockHandlers";
+import { handleInstalledPacksRoute } from "./installedPacksMockHandler";
 import { backendState, jsonResponse, parseJsonBody, problemResponse } from "./mockBackendState";
 import { validateRequestAgainstOpenApi } from "./openApiRequestValidator";
 import { handleOrchestrationRunsRoute } from "./orchestrationRunsMockHandlers";
@@ -152,11 +153,15 @@ export async function vitestFetchTransport(
     method,
     parsedUrl,
     body,
+    rawInit: init,
     reqHeaders,
     jsonResponse,
     problemResponse,
   });
   if (packsAndWizardsResp) return packsAndWizardsResp;
+
+  const installedPacksResp = handleInstalledPacksRoute({ path, method });
+  if (installedPacksResp) return installedPacksResp;
 
   const supervisionResp = handleVitestAutonomousSupervisionRoute(
     path,

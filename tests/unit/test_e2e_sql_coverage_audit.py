@@ -175,6 +175,14 @@ SPEC_ALLOWED_DOMAIN_TABLES: dict[str, frozenset[str]] = {
             "catalog_items",
         }
     ),
+    "31-epic-31-declarative-apm-packs-roundtrip.spec.ts": frozenset(
+        {
+            "declarative_pack_bundles",
+            "workspace_pack_activations",
+            "workspace_pack_slot_bindings",
+            "pack_draft_memberships",
+        }
+    ),
     "shell.spec.ts": frozenset({"users", "platform_auth_settings"}),
 }
 
@@ -225,7 +233,7 @@ def _audit_spec_content(
 
 def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_block() -> None:
     specs = sorted(E2E_DIR.glob("*.spec.ts"))
-    assert len(specs) == 28
+    assert len(specs) == 29
     assert set(SPEC_ALLOWED_DOMAIN_TABLES.keys()) == {p.name for p in specs}
 
     total_blocks = 0
@@ -247,7 +255,7 @@ def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_bloc
         trivial_sql_blocks.extend(trivial)
         out_of_domain_blocks.extend(out_domain)
 
-    assert total_blocks == 62
+    assert total_blocks == 64
     assert blocks_missing_sql == []
     assert trivial_sql_blocks == []
     assert out_of_domain_blocks == []
@@ -255,53 +263,35 @@ def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_bloc
 
 
 def test_e2e_sql_audit_rejects_trivial_select_1_out_of_domain_and_missing_sql() -> None:
-    finops_allowed = SPEC_ALLOWED_DOMAIN_TABLES["12-finops-and-audit-provenance.spec.ts"]
+    finops_spec = "12-finops-and-audit-provenance.spec.ts"
+    finops_allowed = SPEC_ALLOWED_DOMAIN_TABLES[finops_spec]
 
-    trivial_spec = """
-    test("alibi trivial sql", async () => {
-      await expectDbRowCount("SELECT 1", 1);
-    });
-    """
+    trivial_spec = 'test("t", async () => { await expectDbRowCount("SELECT 1", 1); });'
     cnt, missing, trivial, out_domain = _audit_spec_content(
-        "12-finops-and-audit-provenance.spec.ts", trivial_spec, finops_allowed
+        finops_spec, trivial_spec, finops_allowed
     )
-    assert cnt == 1
-    assert missing == []
-    assert len(trivial) == 1
-    assert "SELECT 1" in trivial[0]
-    assert len(out_domain) == 1
+    assert cnt == 1 and missing == [] and len(out_domain) == 1
+    assert len(trivial) == 1 and "SELECT 1" in trivial[0]
 
-    alibi_spec = """
-    test("alibi wrong table on finops spec", async () => {
-      await expectDbRowExists("SELECT id FROM users WHERE email = $1", ["a@orcia.ia"]);
-    });
-    """
+    alibi_spec = 'test("a", async () => { await expectDbRowExists("SELECT id FROM users", []); });'
     cnt2, missing2, trivial2, out_domain2 = _audit_spec_content(
-        "12-finops-and-audit-provenance.spec.ts", alibi_spec, finops_allowed
+        finops_spec, alibi_spec, finops_allowed
     )
     assert cnt2 == 1 and missing2 == [] and trivial2 == []
     assert len(out_domain2) == 1 and "users" in out_domain2[0]
 
-    no_sql_spec = """
-    test("missing sql altogether", async () => {
-      await expect(page.getByTestId("finops")).toBeVisible();
-    });
-    """
+    no_sql_spec = 'test("n", async () => { await expect(page.getByTestId("f")).toBeVisible(); });'
     cnt3, missing3, trivial3, out_domain3 = _audit_spec_content(
-        "12-finops-and-audit-provenance.spec.ts", no_sql_spec, finops_allowed
+        finops_spec, no_sql_spec, finops_allowed
     )
     assert cnt3 == 1 and len(missing3) == 1 and trivial3 == [] and out_domain3 == []
 
-    tautological_count_spec = """
-    test("tautological >= 0 on COUNT(*)", async () => {
-      const rows = queryDbRows<{ count: number }>(
-        "SELECT COUNT(*)::int AS count FROM finops_scope_budgets",
-      );
-      expect(rows[0]?.count ?? -1).toBeGreaterThanOrEqual(0);
-    });
-    """
+    taut_spec = (
+        'test("c", async () => { const rows = queryDbRows("SELECT COUNT(*) FROM '
+        'finops_scope_budgets"); expect(rows[0]?.count ?? -1).toBeGreaterThanOrEqual(0); });'
+    )
     cnt4, missing4, trivial4, out_domain4 = _audit_spec_content(
-        "12-finops-and-audit-provenance.spec.ts", tautological_count_spec, finops_allowed
+        finops_spec, taut_spec, finops_allowed
     )
     assert cnt4 == 1 and missing4 == [] and out_domain4 == []
     assert len(trivial4) == 1 and "toBeGreaterThanOrEqual(0)" in trivial4[0]

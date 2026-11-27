@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.unit.fakes.workflows_seed import create_seeded_test_app as create_app
 
-from orcia_api.main import create_app
 from orcia_core.orchestration import AgentsAndSkillsManagementService
 from orcia_core.orchestration.errors import (
     AgentDraftLifecycleBlockedError,

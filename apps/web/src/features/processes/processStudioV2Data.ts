@@ -1,4 +1,3 @@
-import { getInitialDeclarativePacks } from "./processStudioV2StructuralPacks";
 import { getInitialWorkflowsV2 } from "./processStudioV2StructuralWorkflows";
 import { getInitialVsmSpec } from "./processStudioV2StructuralVsm";
 
@@ -8,7 +7,6 @@ export type {
   DeterministicSubStepItem,
   WorkflowDefinitionV2Item,
 } from "./processStudioV2Types";
-export { getInitialDeclarativePacks } from "./processStudioV2StructuralPacks";
 export { getInitialWorkflowsV2 } from "./processStudioV2StructuralWorkflows";
 export { getInitialVsmSpec } from "./processStudioV2StructuralVsm";
 export {
@@ -17,6 +15,5 @@ export {
   savePersistedWorkflowV2,
 } from "./processStudioV2Storage";
 
-export const INITIAL_DECLARATIVE_PACKS = getInitialDeclarativePacks("fr");
 export const INITIAL_VSM_SPEC = getInitialVsmSpec("fr");
 export const INITIAL_WORKFLOWS_V2 = getInitialWorkflowsV2("fr");

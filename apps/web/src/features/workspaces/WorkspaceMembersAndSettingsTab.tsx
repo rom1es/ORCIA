@@ -10,6 +10,7 @@ import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { WorkspaceMembersInstructionsCard } from "./WorkspaceMembersInstructionsCard";
+import { WorkspacePacksTabSection } from "./WorkspacePacksTabSection";
 import { resolveWorkspaceVisibilityMeta } from "./workspaceDisplayHelpers";
 import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
@@ -199,6 +200,8 @@ export function WorkspaceMembersAndSettingsTab({
           onFeedback={onFeedback}
         />
       </OrciaDataCard>
+
+      <WorkspacePacksTabSection workspaceId={wsId} />
     </div>
   );
 }

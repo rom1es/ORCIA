@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -197,6 +197,7 @@ async def rank_ontology_with_optional_embedding_async(
     domain_scope_id: str = "",
     team_chain_scope_ids: tuple[str, ...] = (),
     run_scope_id: str | None = None,
+    active_pack_priorities: Mapping[str, int] | None = None,
     top_k: int = 8,
 ) -> RankedOntologyContext:
     """Resolve `workspace_id` ontology snapshot and rank concepts (+ embeddings if active)."""
@@ -206,6 +207,7 @@ async def rank_ontology_with_optional_embedding_async(
         team_chain_scope_ids=team_chain_scope_ids,
         workspace_scope_id=workspace_id,
         run_scope_id=run_scope_id,
+        active_pack_priorities=active_pack_priorities,
     )
     active_concepts = [
         c for c in snapshot.concepts_by_term.values() if c.snapshot_branch_status == "ACTIVE"

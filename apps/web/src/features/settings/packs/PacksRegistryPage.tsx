@@ -2,11 +2,11 @@ import { OrciaAlertBanner, OrciaPageHeader, StatusBadge } from "@orcia/ui";
 import React from "react";
 import { useI18n } from "../../../i18n";
 import { ProcessStudioAndPackAuthoringSection } from "../../processes/ProcessStudioAndPackAuthoringSection";
-import { PackCardItem } from "./PackCardItem";
+import { DeclarativePacksRegistrySection } from "./DeclarativePacksRegistrySection";
 import { usePacksRegistryHealthchecks } from "./usePacksRegistryHealthchecks";
 
 export function PacksRegistryPage() {
-  const { dictionary, isFr, locale } = useI18n();
+  const { dictionary, locale } = useI18n();
   const packsCopy = dictionary.featureAdminCatalogSettings.packsRegistry;
   const {
     packs,
@@ -17,8 +17,11 @@ export function PacksRegistryPage() {
     setSelectedPackId,
     statusMessage,
     errorMessage,
+    setStatusMessage,
+    setErrorMessage,
     exportedArchiveName,
     workspaceOptions,
+    reloadPacksFromServer,
     handleRefreshHealthchecks,
     handleExportWorkspaceZip,
     handleExportPackBundleZip,
@@ -101,25 +104,17 @@ export function PacksRegistryPage() {
         alertSlot={alertSlot}
       />
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-          gap: "16px",
+      <DeclarativePacksRegistrySection
+        packs={packs}
+        selectedWorkspaceId={selectedWorkspaceId}
+        onRefreshPacks={reloadPacksFromServer}
+        onExportPackZip={(packId) => {
+          setSelectedPackId(packId);
+          void handleExportPackBundleZip(packId);
         }}
-      >
-        {packs.map((pack) => (
-          <PackCardItem
-            key={pack.id}
-            pack={pack}
-            isFr={isFr}
-            onExportZip={(packId) => {
-              setSelectedPackId(packId);
-              void handleExportPackBundleZip(packId);
-            }}
-          />
-        ))}
-      </div>
+        onStatusMessage={setStatusMessage}
+        onErrorMessage={setErrorMessage}
+      />
 
       <ProcessStudioAndPackAuthoringSection />
     </section>

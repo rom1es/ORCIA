@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from orcia_core.gates._internal._starlark_ast_whitelist import (
+    ALLOWED_STARLARK_AST_NODES,
+    StarlarkSandboxError,
+    validate_starlark_ast,
+)
 from orcia_core.gates._internal.sql_gate_repository import SqlGateEvaluationRepository
 from orcia_core.gates._internal.starlark_sandbox import (
     StarlarkEvaluationResult,
     StarlarkMechanismSandbox,
-    StarlarkSandboxError,
     StarlarkStagedEffect,
     StarlarkVerdictItem,
 )
@@ -84,6 +88,7 @@ from orcia_core.gates.tier2_sandbox import (
 DOMAIN_NAME: str = "gates"
 
 __all__ = [
+    "ALLOWED_STARLARK_AST_NODES",
     "AUTO_PASS_MIN_AGENTIC_SCORE",
     "CANONICAL_FORBIDDEN_DRIFT_PATTERNS",
     "CANONICAL_SPINE_ALLOWED_DEPENDENCIES",
@@ -147,4 +152,5 @@ __all__ = [
     "compute_sampling_bucket",
     "count_words",
     "purge_executor_chain_of_thought",
+    "validate_starlark_ast",
 ]

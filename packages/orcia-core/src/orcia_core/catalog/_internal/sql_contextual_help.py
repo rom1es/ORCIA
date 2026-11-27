@@ -131,7 +131,9 @@ async def publish_hot_help_article_sql(
                             SELECT resource_id, uri, title, description, version, sha256,
                                    cas_key, metadata_jsonb
                             FROM catalog_items
-                            WHERE resource_id = :res_id AND item_type = 'HELP_ARTICLE'
+                            WHERE resource_id = :res_id
+                              AND item_type = 'HELP_ARTICLE'
+                              AND pack_bundle_id IS NULL
                             LIMIT 1;
                             """
                         ),
@@ -166,7 +168,9 @@ async def publish_hot_help_article_sql(
                         sha256 = :sha,
                         cas_key = :cas,
                         metadata_jsonb = CAST(:meta AS jsonb)
-                    WHERE resource_id = :res_id;
+                    WHERE resource_id = :res_id
+                      AND item_type = 'HELP_ARTICLE'
+                      AND pack_bundle_id IS NULL;
                     """
                 ),
                 {
@@ -210,7 +214,9 @@ async def rollback_help_article_sql(
                             SELECT resource_id, uri, title, description, version, sha256,
                                    cas_key, metadata_jsonb
                             FROM catalog_items
-                            WHERE resource_id = :res_id AND item_type = 'HELP_ARTICLE'
+                            WHERE resource_id = :res_id
+                              AND item_type = 'HELP_ARTICLE'
+                              AND pack_bundle_id IS NULL
                             LIMIT 1;
                             """
                         ),
@@ -257,7 +263,9 @@ async def rollback_help_article_sql(
                         sha256 = :sha,
                         cas_key = :cas,
                         metadata_jsonb = CAST(:meta AS jsonb)
-                    WHERE resource_id = :res_id;
+                    WHERE resource_id = :res_id
+                      AND item_type = 'HELP_ARTICLE'
+                      AND pack_bundle_id IS NULL;
                     """
                 ),
                 {

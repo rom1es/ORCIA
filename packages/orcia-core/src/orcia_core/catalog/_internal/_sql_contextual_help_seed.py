@@ -60,7 +60,7 @@ async def seed_help_articles_to_pg18_sql(
                     :version, :sha256, :cas_key, 'PUBLISHED_ORG', :owner_org_unit_id,
                     NULL, 'HELP_ARTICLE', CAST(:metadata_jsonb AS jsonb)
                 )
-                ON CONFLICT (resource_id) DO NOTHING;
+                ON CONFLICT (resource_id) WHERE pack_bundle_id IS NULL DO NOTHING;
                 """
             )
             for art in items:
